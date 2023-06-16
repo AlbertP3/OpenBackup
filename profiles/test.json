@@ -1,0 +1,36 @@
+{
+    "rsync": {
+      "paths": [
+        {
+            "src": "dir1",
+            "exclude": ["*/venv*", "*/__.*"],
+            "isconf": true,
+            "require_closed": "some_pid",
+            "archive": "arch"
+        },
+        {
+            "src": "g.xml"
+        },
+        {
+            "src": "{h.go,l.doc}",
+            "tgt": "dir1/conf"
+        }
+      ],
+      "settings": {
+        "rmode": "truOvn",
+        "rconfmode": "trOn",
+        "rlogfilename": "test.log",
+        "rlogfileformat": "/%f",
+        "cmd":
+        {
+          "post": ["echo 'Hello, world'"],
+          "pre": []
+        },
+        "mkdirs": ["dir1/new_dir"],
+        "monitor": "tree"
+      }
+    },
+    "settings": {
+      "editor": ["nvim", "+1", "-c set filetype=sh", "${FILE}"]
+    }
+  }
