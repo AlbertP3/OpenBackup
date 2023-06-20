@@ -28,14 +28,20 @@ class TreeMonitor(BasicGenerator):
         self.diff = set()
         for path in self.config['paths']:
             excl = self.parse_rsync_exclude(path.get('exclude'))
-            parsed_src = set()
-            for sub_path in self.btr(path['src'], excl):
-                parsed_src.add(self.get_target_path({**path, 'src': sub_path}))
+            parsed_src = self.__get_parsed_src(path, excl)
             tgt_files = self.btr(self.get_start_path(path), excl)
-            [self.diff.add(f) for f in tgt_files.difference(parsed_src) 
+            [self.diff.add(f) for f in tgt_files.difference(parsed_src)
+                # Don't include filenodes meant to be placed in to-be created paths
                 if not any(d in f for d in self.config['settings'].get('mkdirs', list()))]
             self._files_scanned+=len(parsed_src)
         print(f'Scanned {self._files_scanned:,} files in {perf_counter()-t0:.2f} seconds')
+
+    def __get_parsed_src(self, path, excl) -> set:
+        parsed_src = set()
+        lcompi = path['src'].rfind('/')+1
+        for sub_path in self.btr(path['src'], excl):
+                parsed_src.add(self.get_target_path({**path, 'src': sub_path[lcompi:]}))
+        return parsed_src
 
     def btr(self, rootdir:str, exclude:re.Pattern) -> set:
         '''Build Tree Recursive'''
