@@ -13,21 +13,14 @@ class BasicGenerator(ABC):
 
     def get_target_path(self, path:dict) -> str:
         '''Returns path where the file will be stored on destination'''
-        try:
-            return path['dst'] + '/' + path['src'][path['src'].rfind('/')+1:]
-        except KeyError:
-            for v in self.config['paths']:
-                if path['src'].startswith(v['src']):
-                    return v.get('dst', '.') +'/'+ path['src'][v['src'].rfind('/')+1:]
-            else:
-                return path['src'][path['src'].rfind('/')+1:]
+        return os.path.normpath(os.path.join(path.get('dst', '.'), path['src']))
     
     def get_start_path(self, path:dict) -> str:
         '''Returns relative path on destination where the file/dir should exist'''
         try:
             return path['dst']
         except KeyError:
-            return f"./{os.path.basename(path['src'])}"
+            return os.path.basename(path['src'])
 
     def parse_path(self, path:str) -> str:
         '''Escape spaces in paths'''
