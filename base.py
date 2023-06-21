@@ -8,10 +8,6 @@ class BasicGenerator(ABC):
     re_space = re.compile(r'(?<!\\) ')
     SWD = os.path.dirname(os.path.abspath(__file__))
 
-    @abstractmethod
-    def generate(self) -> list:
-        pass
-
     def get_target_path(self, path:dict) -> str:
         '''Returns path where the file will be stored on destination'''
         return os.path.normpath(os.path.join(path['dst'], path['src']))

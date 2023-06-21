@@ -77,19 +77,14 @@ class TreeMonitor(BasicGenerator):
 
     # TODO refactor
     def get_expanded_paths(self, paths:list) -> list:
-        '''If path contains {x,y,...} expression then 
-           it will be divided into separate 'plain' paths'''
-        to_del = set()
-        to_add = list()
-        exp_paths = list()
+        '''If path contains {x,y,...}, then it will be divided into separate 'plain' paths'''
+        to_del, to_add, exp_paths = set(), list(), list()
         for i, v in enumerate(paths):
             if '{' in v['src']:
-                lbi = v['src'].find('{')
-                rbi = v['src'].find('}')
+                lbi, rbi = v['src'].find('{'), v['src'].find('}')
                 pre_path = v['src'][:lbi]
                 exp_paths = v['src'][lbi+1:rbi].split(',')
                 post_path = v['src'][rbi+1:]
-                post_path.replace('}', '')
                 for e in exp_paths:
                     src = f"{pre_path}{e}{post_path}"
                     to_add.append({**v, 'src': src})

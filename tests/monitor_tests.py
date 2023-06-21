@@ -13,9 +13,6 @@ from . import SWD, config
 class MonitorTests(TestCase, BasicGenerator):
     exp_log_path = 'some/pa\ th/test.log'
 
-    def generate(self):
-        '''Compliance with abstract class BasicGenerator'''
-
     def setUp(self):
         super().setUp()
         self.monitor = TreeMonitor(self.parse_config(deepcopy(config)))
@@ -112,6 +109,15 @@ class MonitorTests(TestCase, BasicGenerator):
         self.assertIn(f'{SWD}/data/src/l.doc', paths)
         self.assertNotIn(f'{SWD}/data/src/'+'{h,go,l.doc}', paths)
         self.assertEqual(len(paths), 4)
+
+    def test_expand_paths_2(self):
+        '''Verify that paths are expanded correctly'''
+        paths = [{'src': SWD+'/data/{dir1,dir2}/file'}]
+        res = self.monitor.get_expanded_paths(paths)
+        self.assertEqual(res, [
+                {'src': '{}/data/dir1/file'.format(SWD)},
+                {'src': '{}/data/dir2/file'.format(SWD)}
+        ])
 
     @pytest.mark.compound
     def test_generate(self):
