@@ -11,8 +11,7 @@ class TreeMonitor(BasicGenerator):
        **To be used only for incremental backups** - all surplus files from destination will be marked for deletion'''
 
     def __init__(self, config:dict):
-        self.config = deepcopy(config['rsync'])
-        self.expand_paths()
+        self.config = config
 
     def generate(self) -> list:
         self._files_scanned = 0
@@ -26,13 +25,13 @@ class TreeMonitor(BasicGenerator):
         '''Build a set of files that are present only on the target'''
         t0 = perf_counter()
         self.diff = set()
-        for path in self.config['paths']:
+        for path in self.get_expanded_paths(self.config['rsync']['paths']):
             excl = self.parse_rsync_exclude(path.get('exclude'))
             parsed_src = self.__get_parsed_src(path, excl)
-            tgt_files = self.btr(self.get_start_path(path), excl)
-            [self.diff.add(f) for f in tgt_files.difference(parsed_src)
+            tgt_files = self.btr(self.get_target_path({**path, 'src': os.path.basename(path['src'])}), excl)
+            [self.diff.add(self.parse_path(f)) for f in tgt_files.difference(parsed_src)
                 # Don't include filenodes meant to be placed in to-be created paths
-                if not any(d in f for d in self.config['settings'].get('mkdirs', list()))]
+                if not any(d in f for d in self.config['rsync']['settings'].get('mkdirs', list()))]
             self._files_scanned+=len(parsed_src)
         print(f'Scanned {self._files_scanned:,} files in {perf_counter()-t0:.2f} seconds')
 
@@ -74,14 +73,16 @@ class TreeMonitor(BasicGenerator):
 
     def gen_actions(self):
         actions = {self.parse_path(p) for p in self.diff}
-        self.out.extend([*{f"rm -rfv {f} | tee -a {self.config['settings']['rlogfilename']}" for f in actions}])
+        self.out.extend([*{f"rm -rfv {f} | tee -a {self.config['rsync']['settings']['rlogfilename']}" for f in actions}])
 
-    def expand_paths(self):
+    # TODO refactor
+    def get_expanded_paths(self, paths:list) -> list:
         '''If path contains {x,y,...} expression then 
            it will be divided into separate 'plain' paths'''
         to_del = set()
         to_add = list()
-        for i, v in enumerate(self.config['paths']):
+        exp_paths = list()
+        for i, v in enumerate(paths):
             if '{' in v['src']:
                 lbi = v['src'].find('{')
                 rbi = v['src'].find('}')
@@ -93,9 +94,10 @@ class TreeMonitor(BasicGenerator):
                     src = f"{pre_path}{e}{post_path}"
                     to_add.append({**v, 'src': src})
                 to_del.add(i)
-        self.config['paths'] = [v for i, v in enumerate(self.config['paths']) if i not in to_del]
+        exp_paths = [v for i, v in enumerate(paths) if i not in to_del]
         for p in to_add:
-            self.config['paths'].append(p)
+            exp_paths.append(p)
+        return exp_paths
         
     def filter_diff(self):
         '''Remove unwanted elements from the diff'''

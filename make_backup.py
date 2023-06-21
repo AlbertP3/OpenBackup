@@ -6,12 +6,11 @@ from subprocess import run
 from platform import node
 
 from prepare_script import RsyncGenerator
-
-SWD = os.path.dirname(os.path.abspath(__file__))
-
+from base import BasicGenerator
 
 
-class OpenBackup:
+
+class OpenBackup(BasicGenerator):
     '''Interactively handles the backup process'''
 
     def __init__(self):
@@ -30,7 +29,7 @@ class OpenBackup:
     def load_config(self):
         '''Sources config file(s) from tne 'profiles' directory. 
            Includes automation: default.json, single file or platform name'''
-        profiles = os.listdir(f"{SWD}/profiles")
+        profiles = os.listdir(f"{self.SWD}/profiles")
         if 'default.json' in profiles:
             selected = 'default.json'
         elif len(profiles) == 1:
@@ -41,8 +40,8 @@ class OpenBackup:
             for i, v in enumerate(profiles):
                 print(f"{i+1}. {v.split('.')[0]}")
             selected = profiles[int(input("Select profile: "))-1]
-        self.config = json.load(open(f'{SWD}/profiles/{selected}', 'r'))
-        self.editor:list = self.config['settings'].get('editor')
+        self.config = self.parse_config(json.load(open(f'{self.SWD}/profiles/{selected}', 'r')))
+        self.editor:list = self.config['settings'].get('editor', [])
         print(f"Loaded {selected}")
     
     def prepare_script(self):
