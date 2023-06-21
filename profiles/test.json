@@ -19,12 +19,12 @@
       "settings": {
         "rmode": "truOvn",
         "rconfmode": "trOn",
-        "rlogfilename": "test.log",
+        "rlogfilename": "some/pa th/test.log",
         "rlogfileformat": "/%f",
         "cmd":
         {
           "post": ["echo 'Hello, world'"],
-          "pre": []
+          "pre": ["echo 'Goodbye' | tee ${LOG_PATH}", "man tee"]
         },
         "mkdirs": ["dir1/new_dir"],
         "monitor": "tree"

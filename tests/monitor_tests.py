@@ -1,53 +1,57 @@
+import pytest
 import re
 import os
 from copy import deepcopy
 
 from unittest import TestCase
 from tree_monitor import TreeMonitor
+from base import BasicGenerator
 from . import SWD, config
 
 
 
-class MonitorTests(TestCase):
-    config = deepcopy(config)
+class MonitorTests(TestCase, BasicGenerator):
+    exp_log_path = 'some/pa\ th/test.log'
+
+    def generate(self):
+        '''Compliance with abstract class BasicGenerator'''
 
     def setUp(self):
         super().setUp()
-        self.monitor = TreeMonitor(self.config)
+        self.monitor = TreeMonitor(self.parse_config(deepcopy(config)))
 
     def tearDown(self):
         super().tearDown()
-        self.monitor = TreeMonitor(self.config)
 
-    def test_get_target_path(self):
+    def test_get_target_path_1(self):
         '''Check if this method works as expected'''
         self.assertEqual(self.monitor.get_target_path({
             'dst':f'{SWD}/dir1', 
             'src':'a.txt'}), 
             f'{SWD}/dir1/a.txt')
         self.assertEqual(self.monitor.get_target_path({
-            'src':f'./a.txt'}), 'a.txt')
+            'src':f'./a.txt', 'dst': '.'}), 'a.txt')
         self.assertEqual(self.monitor.get_target_path({
-            'src':f'g.xml'}), 'g.xml')
+            'src':f'g.xml', 'dst': '.'}), 'g.xml')
         self.assertEqual(self.monitor.get_target_path({
-            'src':f'dir5'}), 'dir5')
+            'src':f'dir5', 'dst': '.'}), 'dir5')
         self.assertEqual(self.monitor.get_target_path({
             'dst':f'{SWD}/dir1/conf', 
             'src':'h.go'}), 
             f'{SWD}/dir1/conf/h.go')
     
-    def test_get_start_path(self):
+    def test_get_target_path_1(self):
         '''Check if this method works as expected'''
-        self.assertEqual(self.monitor.get_start_path(
-            {'dst': f'{SWD}/dir'}),
+        self.assertEqual(self.monitor.get_target_path(
+            {'dst': f'{SWD}', 'src': 'dir'}),
             f"{SWD}/dir"
         )
-        self.assertEqual(self.monitor.get_start_path(
-            {'src': f'dir1'}),
+        self.assertEqual(self.monitor.get_target_path(
+            {'src': f'dir1', 'dst': '.'}),
             f"dir1"
         )
-        self.assertEqual(self.monitor.get_start_path(
-            {'src': f'c.csv'}),
+        self.assertEqual(self.monitor.get_target_path(
+            {'src': f'c.csv', 'dst': '.'}),
             f"c.csv"
         )
     
@@ -69,7 +73,7 @@ class MonitorTests(TestCase):
         self.monitor.out = list()
         self.monitor.collect_diff()
         self.assertEqual(self.monitor.diff, 
-            {'dir1/r_ b.txt', 'dir1/dir4/r_i.ini',
+            {'dir1/r_\ b.txt', 'dir1/dir\ 4/r_i.ini',
             'dir1/r_dir5', 'dir1/r_dir5/r_j.jpg', 'dir1/r_dir5/r_k.rtf'}
         )
         self.assertEqual(self.monitor._files_scanned, 11)
@@ -81,7 +85,7 @@ class MonitorTests(TestCase):
         self.monitor.collect_diff()
         self.monitor.filter_diff()
         self.assertEqual(self.monitor.diff, 
-            {'dir1/r_ b.txt', 'dir1/dir4/r_i.ini',
+            {'dir1/r_\ b.txt', 'dir1/dir\ 4/r_i.ini',
             'dir1/r_dir5'}
         )
 
@@ -96,24 +100,25 @@ class MonitorTests(TestCase):
         self.monitor.diff = {'a.txt', 'dir/b.csv', 'dir/hello world.pdf'}
         self.monitor.gen_actions()
         self.assertEqual(set(self.monitor.out), {
-            r'rm -rfv a.txt | tee -a test.log',
-            r'rm -rfv dir/hello\ world.pdf | tee -a test.log',
-            r'rm -rfv dir/b.csv | tee -a test.log'}
+            rf'rm -rfv a.txt | tee -a {self.exp_log_path}',
+            rf'rm -rfv dir/hello\ world.pdf | tee -a {self.exp_log_path}',
+            rf'rm -rfv dir/b.csv | tee -a {self.exp_log_path}'}
         )
     
     def test_expand_paths(self):
         '''Verify that paths are expanded correctly'''
-        paths = {v['src'] for v in self.monitor.config['paths']}
+        paths = {v['src'] for v in self.monitor.get_expanded_paths(self.monitor.config['rsync']['paths'])}
         self.assertIn(f'{SWD}/data/src/h.go', paths)
         self.assertIn(f'{SWD}/data/src/l.doc', paths)
         self.assertNotIn(f'{SWD}/data/src/'+'{h,go,l.doc}', paths)
         self.assertEqual(len(paths), 4)
 
+    @pytest.mark.compound
     def test_generate(self):
         '''Verify that main method works correctly'''
         res = self.monitor.generate()
         self.assertEqual(set(res), {
-            'rm -rfv dir1/r_dir5 | tee -a test.log',
-            'rm -rfv dir1/dir4/r_i.ini | tee -a test.log',
-            'rm -rfv dir1/r_\ b.txt | tee -a test.log'
+            f'rm -rfv dir1/r_dir5 | tee -a {self.exp_log_path}',
+            f'rm -rfv dir1/dir\ 4/r_i.ini | tee -a {self.exp_log_path}',
+            f'rm -rfv dir1/r_\ b.txt | tee -a {self.exp_log_path}'
         })
