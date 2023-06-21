@@ -13,9 +13,6 @@ class PrepareScriptTests(TestCase, BasicGenerator):
     config = deepcopy(config)
     maxDiff = None
 
-    def generate(self):
-        '''Compliance with abstract class BasicGenerator'''
-
     def setUp(self):
         super().setUp()
         self.rsync_generator = RsyncGenerator(self.parse_config(self.config))
@@ -46,13 +43,13 @@ class PrepareScriptTests(TestCase, BasicGenerator):
         '''Verify that method returns proper value'''
         self.rsync_generator.out = list()
         self.rsync_generator.gen_cmds('post')
-        self.assertEqual(self.rsync_generator.out, ['', '# Post Commands', "echo 'Hello, world'"])
+        self.assertEqual(self.rsync_generator.out, ['# Post Commands', "echo 'Hello, world'"])
 
     def test_gen_pre_cmds(self):
         '''Verify that method returns proper value'''
         self.rsync_generator.out = list()
         self.rsync_generator.gen_cmds('pre')
-        self.assertEqual(self.rsync_generator.out, ['', 
+        self.assertEqual(self.rsync_generator.out, [ 
             '# Pre Commands', "echo 'Goodbye' | tee some/pa\\ th/test.log", 
             'man tee'])
 

@@ -53,7 +53,7 @@ class RsyncGenerator(BasicGenerator):
     def gen_cmds(self, which:str):
         '''Generate which:(pre,post) commands if available'''
         if not self.config['rsync']['settings'].get('cmd', {}).get(which): return
-        self.out.extend(['', f'# {which.capitalize()} Commands'])
+        self.out.extend([f'# {which.capitalize()} Commands'])
         for c in self.config['rsync']['settings']['cmd'][which]:
             self.out.append(self.parse_cmd(c))
 
