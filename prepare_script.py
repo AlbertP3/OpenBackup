@@ -49,13 +49,15 @@ class RsyncGenerator(BasicGenerator):
                 self.gen_require_closed(c, v)
             else:
                 self.out.append(c)
+        self.out.append('')
 
     def gen_cmds(self, which:str):
         '''Generate which:(pre,post) commands if available'''
-        if not self.config['rsync']['settings'].get('cmd', {}).get(which): return
+        if not self.config['rsync']['settings'].get('cmd', dict()).get(which): return
         self.out.extend([f'# {which.capitalize()} Commands'])
         for c in self.config['rsync']['settings']['cmd'][which]:
             self.out.append(self.parse_cmd(c))
+        self.out.append('')
 
     def gen_require_closed(self, cmd:str, path):
         if path.get('archive'):
@@ -69,7 +71,7 @@ class RsyncGenerator(BasicGenerator):
     def gen_mkdirs(self):
         self.out.append('# Create directories')
         for d in self.config['rsync']['settings'].get('mkdirs', []):
-            self.out.append(f"mkdir -p {d}")
+            self.out.extend([f"mkdir -p {d}", ''])
         self.out.append('')
         
     def parse_cmd(self, cmd:str) -> str:
