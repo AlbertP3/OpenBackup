@@ -41,7 +41,8 @@ EXP_GEN_RSYNC = [
     f'  tar -cjf arch.bz2 {SWD}/data/src/dir1',
     'fi',
     f'rsync -truOvn {SWD}/data/src/g.xml . $log ',
-    f'rsync -truOvn {SWD}/data/src/'+'{h.go,l.doc} . $log '
+    f'rsync -truOvn {SWD}/data/src/'+'{h.go,l.doc} . $log ',
+    ''
 ]
 
 EXP_PREPARE_SCRIPT_ACTIONS = [
