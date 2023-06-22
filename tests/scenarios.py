@@ -1,4 +1,4 @@
-from . import SWD
+from . import SWD, DDP
 
 
 SCENARIO_SRC = [
@@ -38,18 +38,18 @@ EXP_GEN_RSYNC = [
     'if pgrep some_pid; then',
     '  echo "ERROR some_pid must be closed in order to backup the configuration" >> some/pa\\ th/test.log',
     'else',
-    f'  tar -cjf arch.bz2 {SWD}/data/src/dir1',
+    f'  tar -cjf {DDP}/arch.bz2 {SWD}/data/src/dir1',
     'fi',
-    f'rsync -truOvn {SWD}/data/src/g.xml . $log ',
-    f'rsync -truOvn {SWD}/data/src/'+'{h.go,l.doc} . $log ',
+    f'rsync -truOvn {SWD}/data/src/g.xml {DDP} $log ',
+    f'rsync -truOvn {SWD}/data/src/'+'{h.go,l.doc}'+f' ./data/tgt/dir1/conf $log ',
     ''
 ]
 
 EXP_PREPARE_SCRIPT_ACTIONS = [
 '# Apply changes (renamed/deleted/moved)',
-'rm -rfv dir1/r_dir5 | tee -a some/pa\\ th/test.log',
-'rm -rfv dir1/r_\\ b.txt | tee -a some/pa\\ th/test.log',
-'rm -rfv dir1/dir\\ 4/r_i.ini | tee -a some/pa\\ th/test.log',
+f'rm -rfv {DDP}/dir1/r_dir5 | tee -a some/pa\\ th/test.log',
+f'rm -rfv {DDP}/dir1/r_\\ b.txt | tee -a some/pa\\ th/test.log',
+f'rm -rfv {DDP}/dir1/dir\\ 4/r_i.ini | tee -a some/pa\\ th/test.log',
 ''
 ]
 
@@ -69,22 +69,22 @@ EXP_GENERATE_PREPARE_SCRIPT = [
     '# Pre Commands',
     "echo 'Goodbye' | tee some/pa\\ th/test.log",
     'man tee',
+    '',
     '# Apply changes (renamed/deleted/moved)',
-    'rm -rfv dir1/dir\\ 4/r_i.ini | tee -a some/pa\\ th/test.log',
-    'rm -rfv dir1/r_dir5 | tee -a some/pa\\ th/test.log',
-    'rm -rfv dir1/r_\\ b.txt | tee -a some/pa\\ th/test.log',
+    f'rm -rfv {DDP}/dir1/dir\\ 4/r_i.ini | tee -a some/pa\\ th/test.log',
+    f'rm -rfv {DDP}/dir1/r_dir5 | tee -a some/pa\\ th/test.log',
+    f'rm -rfv {DDP}/dir1/r_\\ b.txt | tee -a some/pa\\ th/test.log',
     '',
     '# Sync files',
     'if pgrep some_pid; then',
     '  echo "ERROR some_pid must be closed in order to backup the configuration" >> some/pa\\ th/test.log',
     'else',
-    '  tar -cjf arch.bz2 '
-    f'{SWD}/data/src/dir1',
+    f'  tar -cjf {DDP}/arch.bz2 {SWD}/data/src/dir1',
     'fi',
-    f'rsync -truOvn {SWD}/data/src/g.xml . $log ',
-    'rsync -truOvn '
-    f'{SWD}/data/src/' + '{h.go,l.doc} . $log ',
+    f'rsync -truOvn {SWD}/data/src/g.xml {DDP} $log ',
+    f'rsync -truOvn {SWD}/data/src/' + '{h.go,l.doc}'+f' ./data/tgt/dir1/conf $log ',
     '',
     '# Post Commands',
-    "echo 'Hello, world'"
+    "echo 'Hello, world'",
+    ''
 ]

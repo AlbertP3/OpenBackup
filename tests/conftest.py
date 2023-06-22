@@ -10,7 +10,6 @@ def pytest_configure():
     os.mkdir(f"{SWD}/data")
     create_tree(SCENARIO_SRC, f"{SWD}/data/src")
     create_tree(SCENARIO_TGT, f"{SWD}/data/tgt")
-    os.chdir(os.path.join(SWD, 'data', 'tgt'))
 
 
 def pytest_sessionfinish(session, exitstatus):
