@@ -64,4 +64,6 @@ class PrepareScriptTests(TestCase, BasicGenerator):
     def test_generate(self):
         '''Verify that method returns proper value'''
         res = self.rsync_generator.generate()
-        self.assertEqual(set(res), set(EXP_GENERATE_PREPARE_SCRIPT))
+        self.assertEqual(res[:17], EXP_GENERATE_PREPARE_SCRIPT[:17])
+        self.assertEqual(set(res[17:20]), set(EXP_GENERATE_PREPARE_SCRIPT[17:20]))
+        self.assertEqual(res[20:], EXP_GENERATE_PREPARE_SCRIPT[20:])

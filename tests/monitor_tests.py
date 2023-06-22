@@ -6,7 +6,7 @@ from copy import deepcopy
 from unittest import TestCase
 from tree_monitor import TreeMonitor
 from base import BasicGenerator
-from . import SWD, config
+from . import SWD, config, DDP
 
 
 
@@ -70,8 +70,8 @@ class MonitorTests(TestCase, BasicGenerator):
         self.monitor.out = list()
         self.monitor.collect_diff()
         self.assertEqual(self.monitor.diff, 
-            {'dir1/r_\ b.txt', 'dir1/dir\ 4/r_i.ini',
-            'dir1/r_dir5', 'dir1/r_dir5/r_j.jpg', 'dir1/r_dir5/r_k.rtf'}
+            {f'{DDP}/dir1/r_\ b.txt', f'{DDP}/dir1/dir\ 4/r_i.ini',
+            f'{DDP}/dir1/r_dir5', f'{DDP}/dir1/r_dir5/r_j.jpg', f'{DDP}/dir1/r_dir5/r_k.rtf'}
         )
         self.assertEqual(self.monitor._files_scanned, 11)
 
@@ -82,8 +82,8 @@ class MonitorTests(TestCase, BasicGenerator):
         self.monitor.collect_diff()
         self.monitor.filter_diff()
         self.assertEqual(self.monitor.diff, 
-            {'dir1/r_\ b.txt', 'dir1/dir\ 4/r_i.ini',
-            'dir1/r_dir5'}
+            {f'{DDP}/dir1/r_\ b.txt', f'{DDP}/dir1/dir\ 4/r_i.ini',
+            f'{DDP}/dir1/r_dir5'}
         )
 
     def test_parse_rsync_exlude(self):
@@ -124,7 +124,7 @@ class MonitorTests(TestCase, BasicGenerator):
         '''Verify that main method works correctly'''
         res = self.monitor.generate()
         self.assertEqual(set(res), {
-            f'rm -rfv dir1/r_dir5 | tee -a {self.exp_log_path}',
-            f'rm -rfv dir1/dir\ 4/r_i.ini | tee -a {self.exp_log_path}',
-            f'rm -rfv dir1/r_\ b.txt | tee -a {self.exp_log_path}'
+            f'rm -rfv {DDP}/dir1/r_dir5 | tee -a {self.exp_log_path}',
+            f'rm -rfv {DDP}/dir1/dir\ 4/r_i.ini | tee -a {self.exp_log_path}',
+            f'rm -rfv {DDP}/dir1/r_\ b.txt | tee -a {self.exp_log_path}'
         })

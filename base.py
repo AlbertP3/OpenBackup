@@ -20,6 +20,7 @@ class BasicGenerator(ABC):
     def parse_config(self, config:dict) -> dict:
         self.SWD = self.parse_path(self.SWD)
         config['rsync']['settings']['rlogfilename'] = self.parse_path(config['rsync']['settings']['rlogfilename'])
+        config['rsync']['settings']['defaultdst'] = self.parse_path(config['rsync']['settings'].get('defaultdst', '.'))
         for i, v in enumerate(config['rsync']['settings']['mkdirs']):
             config['rsync']['settings']['mkdirs'][i] = self.parse_path(v)
         for i, v in enumerate(config['rsync']['paths']):
@@ -27,5 +28,5 @@ class BasicGenerator(ABC):
             try:
                 config['rsync']['paths'][i]['dst'] = self.parse_path(v['dst'])
             except KeyError:
-                config['rsync']['paths'][i]['dst'] = '.'
+                config['rsync']['paths'][i]['dst'] = config['rsync']['settings']['defaultdst']
         return config

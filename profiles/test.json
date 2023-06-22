@@ -13,7 +13,7 @@
         },
         {
             "src": "{h.go,l.doc}",
-            "tgt": "dir1/conf"
+            "dst": "dir1/conf"
         }
       ],
       "settings": {
@@ -23,8 +23,8 @@
         "rlogfileformat": "/%f",
         "cmd":
         {
-          "post": ["echo 'Hello, world'"],
-          "pre": ["echo 'Goodbye' | tee ${LOG_PATH}", "man tee"]
+          "pre": ["echo 'Goodbye' | tee ${LOG_PATH}", "man tee"],
+          "post": ["echo 'Hello, world'"]
         },
         "mkdirs": ["dir1/new_dir"],
         "monitor": "tree"
