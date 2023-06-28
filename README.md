@@ -6,13 +6,13 @@ This program builds a bash script following settings specified in the configurat
 
 ## Usage
 <ol>
-<li>Go to the backup destination and execute make_backup.py
+<li>Go to the backup destination (or set 'defaultdst' parameter instead) and execute make_backup.py
 <li>First, the script will load the configuration file. This can be done by:
 <ol>
 <li>Auto: by matching hostname, looking for 'default.json' or selecting the only available file</li>
 <li>Manual: a list of available profiles is presented to be selected by their index</li>
 </ol>
-<li>Second, a bash script will begin to generate. This can take some time, based on the amount of files to be scanned (~5s/10_000 files)
+<li>Second, a bash script will begin to generate. This can take some time, based on the amount of files to be scanned (~12s/10_000 files)
 <li>Then a temporary file with generated instructions is created and presented to the user in a way specified by the 'editor' setting. It can be reviewed and edited at will
 <ol>
 <li>If 'editor' is specified then it's command is used to present the generated script. If it's saved then the script will be executed (mtime > ctime)
@@ -28,8 +28,8 @@ Configuration is done via json files in the profiles directory. Example profile 
 Parameters in config:
     rsync:
         paths:
-           *src            - path to the dir||file on the Source
-            dst            - destination for the backup files. Defaults to '.'
+           *src            - path to the dir||file on the Source. Supports bracket expansion
+            dst            - destination for the backup files. Defaults to defaultdst
             exclude        - rsync glob patterns to ommit matched paths
             isconf         - is configuration, applies rconfmode args
             require_closed - check if given process is running, using pgrep
@@ -39,8 +39,9 @@ Parameters in config:
            *rconfmode       - args for rsync if is_conf
            *rlogfilename    - where to save logs from rsync
            *rlogfileformat  - rsync logs format
-            mkdirs          - list of dirs to create before backup begins
+            mkdirs          - list of dirs to create before backup begins. Untracked
             monitor         - Monitor for supporting rsync. Available - tree
+            defaultdst      - path to recourse to if dst was not provided. Defaults to '.'
             cmd:
                 post        - list of commands to run after the backup is done
                 pre         - list of commands to run before the backup starts'''
