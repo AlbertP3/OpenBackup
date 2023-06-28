@@ -26,7 +26,7 @@
           "pre": ["echo 'Goodbye' | tee ${LOG_PATH}", "man tee"],
           "post": ["echo 'Hello, world'"]
         },
-        "mkdirs": ["dir1/new_dir"],
+        "mkdirs": ["dir1/conf"],
         "monitor": "tree"
       }
     },
