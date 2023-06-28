@@ -24,7 +24,8 @@ SCENARIO_TGT = [
                 'venv': [
                     'e.whl', 'f.h', 'r_n.exe']}],
             'dir 4': ['h.html', 'r_i.ini'],
-            'r_dir5': ['r_j.jpg', 'r_k.rtf']
+            'r_dir5': ['r_j.jpg', 'r_k.rtf'],
+            'conf': ['r_e.avi', 'h.go']
             }
             ]
         },
@@ -64,7 +65,7 @@ EXP_GENERATE_PREPARE_SCRIPT = [
     'log="--log-file=some/pa\\ th/test.log --log-file-format=/%f"',
     '',
     '# Create directories',
-    'mkdir -p dir1/new_dir',
+    'mkdir -p dir1/conf',
     '',
     '# Pre Commands',
     "echo 'Goodbye' | tee some/pa\\ th/test.log",
