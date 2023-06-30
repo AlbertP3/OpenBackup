@@ -72,10 +72,9 @@ class TreeMonitor(BasicGenerator):
         return re.compile(res)
 
     def gen_actions(self):
-        actions = {self.parse_path(p) for p in self.diff}
-        self.out.extend([*{f"rm -rfv {f} | tee -a {self.config['rsync']['settings']['rlogfilename']}" for f in actions}])
+        actions = sorted([self.parse_path(p) for p in self.diff])
+        self.out.extend([f"rm -rfv {f} | tee -a {self.config['rsync']['settings']['rlogfilename']}" for f in actions])
 
-    # TODO refactor
     def get_expanded_paths(self, paths:list) -> list:
         '''If path contains {x,y,...}, then it will be divided into separate 'plain' paths'''
         to_del, to_add, exp_paths = set(), list(), list()

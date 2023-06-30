@@ -92,14 +92,14 @@ class MonitorTests(TestCase, BasicGenerator):
         self.assertEqual(self.monitor.parse_rsync_exclude(excl).pattern, '(/venv|/__.)')
 
     def test_gen_actions(self):
-        '''Verify actions are generated properly'''
+        '''Verify actions are generated properly and sorted'''
         self.monitor.out = list()
         self.monitor.diff = {'a.txt', 'dir/b.csv', 'dir/hello world.pdf'}
         self.monitor.gen_actions()
-        self.assertEqual(set(self.monitor.out), {
+        self.assertEqual(self.monitor.out, [
             rf'rm -rfv a.txt | tee -a {self.exp_log_path}',
-            rf'rm -rfv dir/hello\ world.pdf | tee -a {self.exp_log_path}',
-            rf'rm -rfv dir/b.csv | tee -a {self.exp_log_path}'}
+            rf'rm -rfv dir/b.csv | tee -a {self.exp_log_path}',
+            rf'rm -rfv dir/hello\ world.pdf | tee -a {self.exp_log_path}']
         )
     
     def test_expand_paths(self):
@@ -123,8 +123,8 @@ class MonitorTests(TestCase, BasicGenerator):
     def test_generate(self):
         '''Verify that main method works correctly'''
         res = self.monitor.generate()
-        self.assertEqual(set(res), {
-            f'rm -rfv {DDP}/dir1/r_dir5 | tee -a {self.exp_log_path}',
+        self.assertEqual(res, [
             f'rm -rfv {DDP}/dir1/dir\ 4/r_i.ini | tee -a {self.exp_log_path}',
-            f'rm -rfv {DDP}/dir1/r_\ b.txt | tee -a {self.exp_log_path}'
-        })
+            f'rm -rfv {DDP}/dir1/r_\ b.txt | tee -a {self.exp_log_path}',
+            f'rm -rfv {DDP}/dir1/r_dir5 | tee -a {self.exp_log_path}',
+        ])
