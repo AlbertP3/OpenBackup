@@ -69,9 +69,10 @@ class RsyncGenerator(BasicGenerator):
         ])
 
     def gen_mkdirs(self):
-        self.out.append('# Create directories')
-        for d in self.config['rsync']['settings'].get('mkdirs', []):
-            self.out.extend([f"mkdir -p {d}", ''])
+        '''Generate actions for creating mkdirs paths'''
+        ad_nodes = [d['path'] for d in self.config['rsync']['settings']['mkdirs'] if not os.path.exists(d['path'])]
+        if ad_nodes:
+            self.out.extend(['# Create directories', *[f"mkdir -p {f}" for f in ad_nodes], ''])
         
     def parse_cmd(self, cmd:str) -> str:
         '''Replace special tags with corresponding variables'''

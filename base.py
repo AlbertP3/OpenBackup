@@ -1,10 +1,9 @@
-from abc import ABC, abstractmethod
 import re
 import os
 
 
 
-class BasicGenerator(ABC):
+class BasicGenerator:
     re_space = re.compile(r'(?<!\\) ')
     SWD = os.path.dirname(os.path.abspath(__file__))
 
@@ -21,8 +20,10 @@ class BasicGenerator(ABC):
         self.SWD = self.parse_path(self.SWD)
         config['rsync']['settings']['rlogfilename'] = self.parse_path(config['rsync']['settings']['rlogfilename'])
         config['rsync']['settings']['defaultdst'] = self.parse_path(config['rsync']['settings'].get('defaultdst', '.'))
-        for i, v in enumerate(config['rsync']['settings']['mkdirs']):
-            config['rsync']['settings']['mkdirs'][i] = self.parse_path(v)
+        for v in config['rsync']['settings'].setdefault('mkdirs', []):
+            v['path'] = os.path.normpath(self.parse_path(v['path']))
+            v.setdefault('clear', False)
+            v.setdefault('ignore', [])
         for i, v in enumerate(config['rsync']['paths']):
             config['rsync']['paths'][i]['src'] = self.parse_path(v['src'])
             try:
@@ -30,3 +31,15 @@ class BasicGenerator(ABC):
             except KeyError:
                 config['rsync']['paths'][i]['dst'] = config['rsync']['settings']['defaultdst']
         return config
+
+    # TODO implement proper parsing
+    def parse_rsync_exclude(self, excl:list) -> re.Pattern:
+        '''Parses the rsync glob patterns to regex'''
+        if not excl: res = r'.^'
+        else:
+            res = '(' + '|'.join(p[1:-1] for p in excl) + ')'
+        return re.compile(res)
+
+    def join_regex(self, regex:list, prepend:str='') -> re.Pattern:
+        '''Creates regex pattern from a list of separate expressions'''
+        return re.compile(f'{prepend}(' + '|'.join(regex) + ')')

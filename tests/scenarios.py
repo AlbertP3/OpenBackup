@@ -25,7 +25,12 @@ SCENARIO_TGT = [
                     'e.whl', 'f.h', 'r_n.exe']}],
             'dir 4': ['h.html', 'r_i.ini'],
             'r_dir5': ['r_j.jpg', 'r_k.rtf'],
-            'conf': ['r_e.avi', 'h.go']
+            'conf': ['r_e.avi', 'h.go', {
+                'r_dig': [
+                    'r_z.zip'
+                ]
+            }, { 'settings': ['y.yaml']}
+            ]
             }
             ]
         },
@@ -48,9 +53,11 @@ EXP_GEN_RSYNC = [
 
 EXP_PREPARE_SCRIPT_ACTIONS = [
 '# Apply changes (renamed/deleted/moved)',
-f'rm -rfv {DDP}/dir1/r_dir5 | tee -a some/pa\\ th/test.log',
-f'rm -rfv {DDP}/dir1/r_\\ b.txt | tee -a some/pa\\ th/test.log',
 f'rm -rfv {DDP}/dir1/dir\\ 4/r_i.ini | tee -a some/pa\\ th/test.log',
+f'rm -rfv {DDP}/dir1/r_\\ b.txt | tee -a some/pa\\ th/test.log',
+f'rm -rfv {DDP}/dir1/r_dir5 | tee -a some/pa\\ th/test.log',
+'rm -rfv tests/data/tgt/dir1/conf/r_dig | tee -a some/pa\\ th/test.log',
+'rm -rfv tests/data/tgt/dir1/conf/r_e.avi | tee -a some/pa\\ th/test.log',
 ''
 ]
 
@@ -64,8 +71,8 @@ EXP_GENERATE_PREPARE_SCRIPT = [
     'echo -n > some/pa\\ th/test.log',
     'log="--log-file=some/pa\\ th/test.log --log-file-format=/%f"',
     '',
-    '# Create directories',
-    'mkdir -p dir1/conf',
+    '# Create directories', 
+    'mkdir -p tests/data/tgt/adj',
     '',
     '# Pre Commands',
     "echo 'Goodbye' | tee some/pa\\ th/test.log",
@@ -73,8 +80,10 @@ EXP_GENERATE_PREPARE_SCRIPT = [
     '',
     '# Apply changes (renamed/deleted/moved)',
     f'rm -rfv {DDP}/dir1/dir\\ 4/r_i.ini | tee -a some/pa\\ th/test.log',
-    f'rm -rfv {DDP}/dir1/r_dir5 | tee -a some/pa\\ th/test.log',
     f'rm -rfv {DDP}/dir1/r_\\ b.txt | tee -a some/pa\\ th/test.log',
+    f'rm -rfv {DDP}/dir1/r_dir5 | tee -a some/pa\\ th/test.log',
+    'rm -rfv tests/data/tgt/dir1/conf/r_dig | tee -a some/pa\\ th/test.log',
+    'rm -rfv tests/data/tgt/dir1/conf/r_e.avi | tee -a some/pa\\ th/test.log',
     '',
     '# Sync files',
     'if pgrep some_pid; then',

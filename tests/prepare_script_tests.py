@@ -16,6 +16,7 @@ class PrepareScriptTests(TestCase, BasicGenerator):
     def setUp(self):
         super().setUp()
         self.rsync_generator = RsyncGenerator(self.parse_config(self.config))
+        self.rsync_generator.out = list()
 
     def tearDown(self):
         super().tearDown()
@@ -29,7 +30,6 @@ class PrepareScriptTests(TestCase, BasicGenerator):
     
     def test_gen_rsync(self):
         '''Verify that rsync is generated properly'''
-        self.rsync_generator.out = list()
         self.rsync_generator.gen_rsync()
         self.assertEqual(self.rsync_generator.out, EXP_GEN_RSYNC)
     
@@ -41,13 +41,11 @@ class PrepareScriptTests(TestCase, BasicGenerator):
     
     def test_gen_post_cmds(self):
         '''Verify that method returns proper value'''
-        self.rsync_generator.out = list()
         self.rsync_generator.gen_cmds('post')
         self.assertEqual(self.rsync_generator.out, ['# Post Commands', "echo 'Hello, world'", ''])
 
     def test_gen_pre_cmds(self):
         '''Verify that method returns proper value'''
-        self.rsync_generator.out = list()
         self.rsync_generator.gen_cmds('pre')
         self.assertEqual(self.rsync_generator.out, [ 
             '# Pre Commands', "echo 'Goodbye' | tee some/pa\\ th/test.log", 
@@ -55,15 +53,18 @@ class PrepareScriptTests(TestCase, BasicGenerator):
 
     def test_gen_monitor_actions(self):
         '''Verify that method returns proper value'''
-        self.rsync_generator.out = list()
         self.rsync_generator.gen_monitor_actions()
-        self.assertEqual(self.rsync_generator.out[0], EXP_PREPARE_SCRIPT_ACTIONS[0])
-        self.assertEqual(set(self.rsync_generator.out[1:]), set(EXP_PREPARE_SCRIPT_ACTIONS[1:]))
+        self.assertEqual(self.rsync_generator.out, EXP_PREPARE_SCRIPT_ACTIONS)
+
+    def test_gen_mkdirs(self):
+        '''Verify that method returns proper value'''
+        self.rsync_generator.gen_mkdirs()
+        self.assertEqual(self.rsync_generator.out, 
+            ['# Create directories', 'mkdir -p tests/data/tgt/adj', '']
+        )
 
     @pytest.mark.compound
     def test_generate(self):
         '''Verify that method returns proper value'''
         res = self.rsync_generator.generate()
-        self.assertEqual(res[:17], EXP_GENERATE_PREPARE_SCRIPT[:17])
-        self.assertEqual(set(res[17:20]), set(EXP_GENERATE_PREPARE_SCRIPT[17:20]))
-        self.assertEqual(res[20:], EXP_GENERATE_PREPARE_SCRIPT[20:])
+        self.assertEqual(res, EXP_GENERATE_PREPARE_SCRIPT)

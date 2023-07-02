@@ -80,8 +80,8 @@ class MonitorTests(TestCase, BasicGenerator):
         self.monitor._files_scanned = 0
         self.monitor.out = list()
         self.monitor.collect_diff()
-        self.monitor.filter_diff()
-        self.assertEqual(self.monitor.diff, 
+        diff = self.monitor.filter_diff(self.monitor.diff)
+        self.assertEqual(diff, 
             {f'{DDP}/dir1/r_\ b.txt', f'{DDP}/dir1/dir\ 4/r_i.ini',
             f'{DDP}/dir1/r_dir5'}
         )
@@ -99,7 +99,9 @@ class MonitorTests(TestCase, BasicGenerator):
         self.assertEqual(self.monitor.out, [
             rf'rm -rfv a.txt | tee -a {self.exp_log_path}',
             rf'rm -rfv dir/b.csv | tee -a {self.exp_log_path}',
-            rf'rm -rfv dir/hello\ world.pdf | tee -a {self.exp_log_path}']
+            rf'rm -rfv dir/hello\ world.pdf | tee -a {self.exp_log_path}',
+            rf'rm -rfv tests/data/tgt/dir1/conf/r_dig | tee -a {self.exp_log_path}',
+            rf'rm -rfv tests/data/tgt/dir1/conf/r_e.avi | tee -a {self.exp_log_path}']
         )
     
     def test_expand_paths(self):
@@ -119,6 +121,13 @@ class MonitorTests(TestCase, BasicGenerator):
                 {'src': '{}/data/dir2/file'.format(SWD)}
         ])
 
+    def test_get_ignored_paths(self):
+        '''Verify ignored paths are properly created'''
+        self.assertEqual(self.monitor.ignored_paths, {
+            'tests/data/tgt/dir1/conf',
+            'tests/data/tgt/adj'}
+        )
+
     @pytest.mark.compound
     def test_generate(self):
         '''Verify that main method works correctly'''
@@ -127,4 +136,6 @@ class MonitorTests(TestCase, BasicGenerator):
             f'rm -rfv {DDP}/dir1/dir\ 4/r_i.ini | tee -a {self.exp_log_path}',
             f'rm -rfv {DDP}/dir1/r_\ b.txt | tee -a {self.exp_log_path}',
             f'rm -rfv {DDP}/dir1/r_dir5 | tee -a {self.exp_log_path}',
+            f'rm -rfv tests/data/tgt/dir1/conf/r_dig | tee -a {self.exp_log_path}',
+            f'rm -rfv tests/data/tgt/dir1/conf/r_e.avi | tee -a {self.exp_log_path}',
         ])

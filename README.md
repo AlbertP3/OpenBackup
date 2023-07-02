@@ -28,18 +28,21 @@ Configuration is done via json files in the profiles directory. Example profile 
 Parameters in config:
     rsync:
         paths:
-           *src            - path to the dir||file on the Source. Supports bracket expansion
-            dst            - destination for the backup files. Defaults to defaultdst
-            exclude        - rsync glob patterns to ommit matched paths
-            isconf         - is configuration, applies rconfmode args
-            require_closed - check if given process is running, using pgrep
-            archive        - tar the file/dir and send it to destination
+           *src             - path to the dir||file on the Source. Supports bracket expansion
+            dst             - destination for the backup files. Defaults to defaultdst
+            exclude         - rsync glob patterns to ommit matched paths
+            isconf          - is configuration, applies rconfmode args
+            require_closed  - check if given process is running, using pgrep
+            archive         - tar the file/dir and send it to destination
         settings:
            *rmode           - args for rsync
            *rconfmode       - args for rsync if is_conf
            *rlogfilename    - where to save logs from rsync
            *rlogfileformat  - rsync logs format
-            mkdirs          - list of dirs to create before backup begins. Untracked
+            mkdirs:
+                *path       - path to create before backup begins
+                clear       - determines if path should be cleared. Defaults to False
+                ignore      - exclude from removal files|dirs matching any regex in this list
             monitor         - Monitor for supporting rsync. Available - tree
             defaultdst      - path to recourse to if dst was not provided. Defaults to '.'
             cmd:
