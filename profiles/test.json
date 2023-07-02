@@ -35,8 +35,7 @@
           {
             "path": "./tests/data/tgt/adj"
           }
-        ],
-        "monitor": "tree"
+        ]
       }
     },
     "settings": {
