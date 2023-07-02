@@ -43,7 +43,6 @@ Parameters in config:
                 *path       - path to create before backup begins
                 clear       - determines if path should be cleared. Defaults to False
                 ignore      - exclude from removal files|dirs matching any regex in this list
-            monitor         - Monitor for supporting rsync. Available - tree
             defaultdst      - path to recourse to if dst was not provided. Defaults to '.'
             cmd:
                 post        - list of commands to run after the backup is done
