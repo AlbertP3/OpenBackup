@@ -12,12 +12,13 @@ class TreeMonitor(BasicGenerator):
 
     def __init__(self, config:dict):
         self.config = config
+        self.ignored_paths = {d['path'] for d in self.config['rsync']['settings']['mkdirs']}
 
     def generate(self) -> list:
         self._files_scanned = 0
         self.out = list()
         self.collect_diff()
-        self.filter_diff()
+        self.diff = self.filter_diff(self.diff)
         self.gen_actions()
         return self.out
 
@@ -29,10 +30,9 @@ class TreeMonitor(BasicGenerator):
             excl = self.parse_rsync_exclude(path.get('exclude'))
             parsed_src = self.__get_parsed_src(path, excl)
             tgt_files = self.btr(self.get_target_path({**path, 'src': os.path.basename(path['src'])}), excl)
-            [self.diff.add(self.parse_path(f)) for f in tgt_files.difference(parsed_src)
-                # Don't include filenodes meant to be placed in to-be created paths
-                if not any(d in f for d in self.config['rsync']['settings'].get('mkdirs', list()))]
+            self.diff|=tgt_files.difference(parsed_src)
             self._files_scanned+=len(parsed_src)
+        self.diff = {self.parse_path(f) for f in self.diff if not any(p in f for p in self.ignored_paths)}
         print(f'Scanned {self._files_scanned:,} files in {perf_counter()-t0:.2f} seconds')
 
     def __get_parsed_src(self, path, excl) -> set:
@@ -62,17 +62,13 @@ class TreeMonitor(BasicGenerator):
             pass
         except NotADirectoryError:
             self.__btr_res.add(rootdir)
-
-    # TODO implement proper parsing
-    def parse_rsync_exclude(self, excl:list) -> re.Pattern:
-        '''Parses the rsync glob patterns to regex'''
-        if not excl: res = r'.^'
-        else:
-            res = '(' + '|'.join(p[1:-1] for p in excl) + ')'
-        return re.compile(res)
-
     def gen_actions(self):
-        actions = sorted([self.parse_path(p) for p in self.diff])
+        rm_nodes = set()
+        for d in self.config['rsync']['settings']['mkdirs']:
+            if d['clear'] and os.path.exists(d['path']):
+                nodes =  self.btr(d['path'], self.join_regex(d['ignore'], prepend=d['path']+'/'))
+                rm_nodes |= self.filter_diff(nodes)
+        actions = sorted([self.parse_path(p) for p in self.diff|rm_nodes])
         self.out.extend([f"rm -rfv {f} | tee -a {self.config['rsync']['settings']['rlogfilename']}" for f in actions])
 
     def get_expanded_paths(self, paths:list) -> list:
@@ -93,10 +89,12 @@ class TreeMonitor(BasicGenerator):
             exp_paths.append(p)
         return exp_paths
         
-    def filter_diff(self):
+    def filter_diff(self, diff:set) -> set:
         '''Remove unwanted elements from the diff'''
-        for d in self.diff.copy():
+        res = deepcopy(diff)
+        for d in diff:
             if os.path.isdir(d):
-                # if a dir is removed, dont't include files
-                self.diff = {i for i in self.diff if not i.startswith(d)}
-                self.diff.add(d)
+                # if a dir is removed, don't include files
+                res = {i for i in res if not i.startswith(d)}
+                res.add(d)
+        return res
