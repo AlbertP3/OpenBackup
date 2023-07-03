@@ -71,7 +71,7 @@ class MonitorTests(TestCase, BasicGenerator):
         self.monitor.collect_diff()
         self.assertEqual(self.monitor.diff, 
             {f'{DDP}/dir1/r_\ b.txt', f'{DDP}/dir1/dir\ 4/r_i.ini',
-            f'{DDP}/dir1/r_dir5', f'{DDP}/dir1/r_dir5/r_j.jpg', f'{DDP}/dir1/r_dir5/r_k.rtf'}
+            f'{DDP}/dir1/r_dir5'}
         )
         self.assertEqual(self.monitor._files_scanned, 11)
 
@@ -80,8 +80,7 @@ class MonitorTests(TestCase, BasicGenerator):
         self.monitor._files_scanned = 0
         self.monitor.out = list()
         self.monitor.collect_diff()
-        diff = self.monitor.filter_diff(self.monitor.diff)
-        self.assertEqual(diff, 
+        self.assertEqual(self.monitor.diff, 
             {f'{DDP}/dir1/r_\ b.txt', f'{DDP}/dir1/dir\ 4/r_i.ini',
             f'{DDP}/dir1/r_dir5'}
         )

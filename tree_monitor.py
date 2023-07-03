@@ -1,6 +1,5 @@
 import os
 import re
-from copy import deepcopy
 from time import perf_counter
 from base import BasicGenerator
 
@@ -18,7 +17,6 @@ class TreeMonitor(BasicGenerator):
         self._files_scanned = 0
         self.out = list()
         self.collect_diff()
-        self.diff = self.filter_diff(self.diff)
         self.gen_actions()
         return self.out
 
@@ -30,7 +28,7 @@ class TreeMonitor(BasicGenerator):
             excl = self.parse_rsync_exclude(path.get('exclude'))
             parsed_src = self.__get_parsed_src(path, excl)
             tgt_files = self.btr(self.get_target_path({**path, 'src': os.path.basename(path['src'])}), excl)
-            self.diff|=tgt_files.difference(parsed_src)
+            self.diff|=self.filter_diff(tgt_files.difference(parsed_src))
             self._files_scanned+=len(parsed_src)
         self.diff = {self.parse_path(f) for f in self.diff if not any(p in f for p in self.ignored_paths)}
         print(f'Scanned {self._files_scanned:,} files in {perf_counter()-t0:.2f} seconds')
@@ -62,6 +60,7 @@ class TreeMonitor(BasicGenerator):
             pass
         except NotADirectoryError:
             self.__btr_res.add(rootdir)
+
     def gen_actions(self):
         rm_nodes = set()
         for d in self.config['rsync']['settings']['mkdirs']:
@@ -91,10 +90,9 @@ class TreeMonitor(BasicGenerator):
         
     def filter_diff(self, diff:set) -> set:
         '''Remove unwanted elements from the diff'''
-        res = deepcopy(diff)
         for d in diff:
             if os.path.isdir(d):
                 # if a dir is removed, don't include files
-                res = {i for i in res if not i.startswith(d)}
-                res.add(d)
-        return res
+                diff = {i for i in diff if not i.startswith(d)}
+                diff.add(d)
+        return diff

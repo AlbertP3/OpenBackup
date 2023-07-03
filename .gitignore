@@ -1,6 +1,7 @@
 profiles/*
 !profiles/test.json
 tests/data
+perf_tests
 .vscode
 .pytest*
 __pycache__
