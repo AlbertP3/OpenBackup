@@ -39,10 +39,7 @@ Parameters in config:
            *rconfmode       - args for rsync if is_conf
            *rlogfilename    - where to save logs from rsync
            *rlogfileformat  - rsync logs format
-            mkdirs:
-                *path       - path to create before backup begins
-                clear       - determines if path should be cleared. Defaults to False
-                ignore      - exclude from removal files|dirs matching any regex in this list
+            mkdirs          - list of dirs to create before backup begins. Untracked
             defaultdst      - path to recourse to if dst was not provided. Defaults to '.'
             cmd:
                 post        - list of commands to run after the backup is done

@@ -9,21 +9,19 @@ class BasicGenerator:
 
     def get_target_path(self, path:dict) -> str:
         '''Returns path where the file will be stored on destination'''
-        return os.path.normpath(os.path.join(path['dst'], path['src']))
+        return os.path.join(path['dst'], path['src'])
 
     def parse_path(self, path:str) -> str:
         '''Parse single path'''
         path = self.re_space.sub('\ ', path)
-        return path
+        return os.path.normpath(path)
 
     def parse_config(self, config:dict) -> dict:
         self.SWD = self.parse_path(self.SWD)
         config['rsync']['settings']['rlogfilename'] = self.parse_path(config['rsync']['settings']['rlogfilename'])
         config['rsync']['settings']['defaultdst'] = self.parse_path(config['rsync']['settings'].get('defaultdst', '.'))
-        for v in config['rsync']['settings'].setdefault('mkdirs', []):
-            v['path'] = os.path.normpath(self.parse_path(v['path']))
-            v.setdefault('clear', False)
-            v.setdefault('ignore', [])
+        for i, v in enumerate(config['rsync']['settings'].setdefault('mkdirs', [])):
+            config['rsync']['settings']['mkdirs'][i] = self.parse_path(v)
         for i, v in enumerate(config['rsync']['paths']):
             config['rsync']['paths'][i]['src'] = self.parse_path(v['src'])
             try:

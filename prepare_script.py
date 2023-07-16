@@ -70,9 +70,9 @@ class RsyncGenerator(BasicGenerator):
 
     def gen_mkdirs(self):
         '''Generate actions for creating mkdirs paths'''
-        ad_nodes = [d['path'] for d in self.config['rsync']['settings']['mkdirs'] if not os.path.exists(d['path'])]
-        if ad_nodes:
-            self.out.extend(['# Create directories', *[f"mkdir -p {f}" for f in ad_nodes], ''])
+        make_nodes = [d for d in self.config['rsync']['settings']['mkdirs'] if not os.path.exists(d)]
+        if make_nodes:
+            self.out.extend(['# Create directories', *[f"mkdir -p {f}" for f in make_nodes], ''])
         
     def parse_cmd(self, cmd:str) -> str:
         '''Replace special tags with corresponding variables'''
@@ -81,7 +81,8 @@ class RsyncGenerator(BasicGenerator):
 
     def gen_monitor_actions(self):
         monitor = TreeMonitor(self.config)
-        self.out.extend(["# Apply changes (renamed/deleted/moved)", *monitor.generate(), ''])
+        if res:=monitor.generate():
+            self.out.extend(["# Apply changes (renamed/deleted/moved)", *res, ''])
         
     def get_archive_cmd(self, path) -> str:
         tgt = self.get_target_path({'dst': path['dst'], 'src': path['archive']})

@@ -11,7 +11,7 @@ class TreeMonitor(BasicGenerator):
 
     def __init__(self, config:dict):
         self.config = config
-        self.ignored_paths = {d['path'] for d in self.config['rsync']['settings']['mkdirs']}
+        self.mkdir_paths = {d for d in self.config['rsync']['settings']['mkdirs']}
 
     def generate(self) -> list:
         self._files_scanned = 0
@@ -30,7 +30,7 @@ class TreeMonitor(BasicGenerator):
             tgt_files = self.btr(self.get_target_path({**path, 'src': os.path.basename(path['src'])}), excl)
             self.diff|=self.filter_diff(tgt_files.difference(parsed_src))
             self._files_scanned+=len(parsed_src)
-        self.diff = {self.parse_path(f) for f in self.diff if not any(p in f for p in self.ignored_paths)}
+        self.diff = {f for f in self.diff if not any(p in f for p in self.mkdir_paths)}
         print(f'Scanned {self._files_scanned:,} files in {perf_counter()-t0:.2f} seconds')
 
     def __get_parsed_src(self, path, excl) -> set:
@@ -62,12 +62,7 @@ class TreeMonitor(BasicGenerator):
             self.__btr_res.add(rootdir)
 
     def gen_actions(self):
-        rm_nodes = set()
-        for d in self.config['rsync']['settings']['mkdirs']:
-            if d['clear'] and os.path.exists(d['path']):
-                nodes =  self.btr(d['path'], self.join_regex(d['ignore'], prepend=d['path']+'/'))
-                rm_nodes |= self.filter_diff(nodes)
-        actions = sorted([self.parse_path(p) for p in self.diff|rm_nodes])
+        actions = sorted([self.parse_path(p) for p in self.diff])
         self.out.extend([f"rm -rfv {f} | tee -a {self.config['rsync']['settings']['rlogfilename']}" for f in actions])
 
     def get_expanded_paths(self, paths:list) -> list:
