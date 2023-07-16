@@ -29,7 +29,7 @@ SCENARIO_TGT = [
                 'r_dig': [
                     'r_z.zip'
                 ]
-            }, { 'settings': ['y.yaml']}
+            }
             ]
             }
             ]
@@ -47,7 +47,7 @@ EXP_GEN_RSYNC = [
     f'  tar -cjf {DDP}/arch.bz2 {SWD}/data/src/dir1',
     'fi',
     f'rsync -truOvn {SWD}/data/src/g.xml {DDP} $log ',
-    f'rsync -truOvn {SWD}/data/src/'+'{h.go,l.doc}'+f' ./data/tgt/dir1/conf $log ',
+    f'rsync -truOvn {SWD}/data/src/'+'{h.go,l.doc} tests/data/tgt/dir1/conf $log ',
     ''
 ]
 
@@ -56,8 +56,6 @@ EXP_PREPARE_SCRIPT_ACTIONS = [
 f'rm -rfv {DDP}/dir1/dir\\ 4/r_i.ini | tee -a some/pa\\ th/test.log',
 f'rm -rfv {DDP}/dir1/r_\\ b.txt | tee -a some/pa\\ th/test.log',
 f'rm -rfv {DDP}/dir1/r_dir5 | tee -a some/pa\\ th/test.log',
-'rm -rfv tests/data/tgt/dir1/conf/r_dig | tee -a some/pa\\ th/test.log',
-'rm -rfv tests/data/tgt/dir1/conf/r_e.avi | tee -a some/pa\\ th/test.log',
 ''
 ]
 
@@ -82,8 +80,6 @@ EXP_GENERATE_PREPARE_SCRIPT = [
     f'rm -rfv {DDP}/dir1/dir\\ 4/r_i.ini | tee -a some/pa\\ th/test.log',
     f'rm -rfv {DDP}/dir1/r_\\ b.txt | tee -a some/pa\\ th/test.log',
     f'rm -rfv {DDP}/dir1/r_dir5 | tee -a some/pa\\ th/test.log',
-    'rm -rfv tests/data/tgt/dir1/conf/r_dig | tee -a some/pa\\ th/test.log',
-    'rm -rfv tests/data/tgt/dir1/conf/r_e.avi | tee -a some/pa\\ th/test.log',
     '',
     '# Sync files',
     'if pgrep some_pid; then',
@@ -92,7 +88,7 @@ EXP_GENERATE_PREPARE_SCRIPT = [
     f'  tar -cjf {DDP}/arch.bz2 {SWD}/data/src/dir1',
     'fi',
     f'rsync -truOvn {SWD}/data/src/g.xml {DDP} $log ',
-    f'rsync -truOvn {SWD}/data/src/' + '{h.go,l.doc}'+f' ./data/tgt/dir1/conf $log ',
+    f'rsync -truOvn {SWD}/data/src/' + '{h.go,l.doc} tests/data/tgt/dir1/conf $log ',
     '',
     '# Post Commands',
     "echo 'Hello, world'",

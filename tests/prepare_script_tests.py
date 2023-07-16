@@ -37,7 +37,7 @@ class PrepareScriptTests(TestCase, BasicGenerator):
         '''Verify that method returns proper value'''
         res = self.rsync_generator.get_archive_cmd({'dst': './dir/folder', 
                                                     'src': '/x/y/file', 'archive': 'arc'})
-        self.assertEqual(res, 'tar -cjf dir/folder/arc.bz2 /x/y/file')
+        self.assertEqual(res, 'tar -cjf ./dir/folder/arc.bz2 /x/y/file')
     
     def test_gen_post_cmds(self):
         '''Verify that method returns proper value'''

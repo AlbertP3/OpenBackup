@@ -26,16 +26,7 @@
           "pre": ["echo 'Goodbye' | tee ${LOG_PATH}", "man tee"],
           "post": ["echo 'Hello, world'"]
         },
-        "mkdirs": [
-          {
-            "path": "./tests/data/tgt/dir1/conf",
-            "clear": true,
-            "ignore": ["h\\.go", "ne_d/z\\.zip", "settings.?(y.yaml|x.tar)?"]
-          },
-          {
-            "path": "./tests/data/tgt/adj"
-          }
-        ]
+        "mkdirs": ["./tests/data/tgt/dir1/conf", "tests/data/tgt/adj"]
       }
     },
     "settings": {
