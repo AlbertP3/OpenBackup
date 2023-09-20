@@ -34,6 +34,7 @@ Parameters in config:
             isconf          - is configuration, applies rconfmode args
             require_closed  - check if given process is running, using pgrep
             archive         - tar the file/dir and send it to destination
+            extract         - untar the file/dir and send it to destination
         settings:
            *rmode           - args for rsync
            *rconfmode       - args for rsync if is_conf

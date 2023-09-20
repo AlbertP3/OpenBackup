@@ -39,9 +39,11 @@ class RsyncGenerator(BasicGenerator):
     def gen_rsync(self):
         self.out.append("# Sync files")
         for v in self.config['rsync']['paths']:
-            if v.get('archive') and not v.get('require_closed'):
-                self.out.append(self.get_archive_cmd(v))
-                continue
+            if not v.get('require_closed'):
+                if v.get('archive'):
+                    self.out.append(self.get_archive_cmd(v))
+                elif v.get('extract'):
+                    self.out.append(self.get_extract_cmd(v))
             mode = self.config['rsync']['settings']['rconfmode'] if v.get('isconf') else self.config['rsync']['settings']['rmode']
             exclusions = "--exclude={"+','.join(v['exclude'])+"}" if v.get('exclude') else ''
             c = f"""rsync -{mode} {v['src']} {v['dst']} $log {exclusions}"""
@@ -62,6 +64,8 @@ class RsyncGenerator(BasicGenerator):
     def gen_require_closed(self, cmd:str, path):
         if path.get('archive'):
             cmd = f"{self.get_archive_cmd(path)}"
+        elif path.get('extract'):
+            cmd = f"{self.get_extract_cmd(path)}"
         self.out.extend([
             f"if pgrep {path['require_closed']}; then", 
             f'''  echo "ERROR {path['require_closed']} must be closed in order to backup the configuration" >> {self.logpath}''',
@@ -87,3 +91,6 @@ class RsyncGenerator(BasicGenerator):
     def get_archive_cmd(self, path) -> str:
         tgt = self.get_target_path({'dst': path['dst'], 'src': path['archive']})
         return f"tar -cjf {tgt}.bz2 {path['src']}"
+
+    def get_extract_cmd(self, path) -> str:
+        return f"tar -xjf {path['src']}.bz2 {path['dst']}"

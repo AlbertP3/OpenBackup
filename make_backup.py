@@ -29,7 +29,7 @@ class OpenBackup(BasicGenerator):
     def load_config(self):
         '''Sources config file(s) from tne 'profiles' directory. 
            Includes automation: default.json, single file or platform name'''
-        profiles = os.listdir(f"{self.SWD}/profiles")
+        profiles = [f for f in os.listdir(f"{self.SWD}/profiles") if not f.startswith('test')]
         if 'default.json' in profiles:
             selected = 'default.json'
         elif len(profiles) == 1:
