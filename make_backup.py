@@ -18,11 +18,17 @@ class OpenBackup(BasicGenerator):
         self.should_run = False
 
     def make(self):
-        self.load_config()
+        try:
+            self.load_config()
+        except ValueError:
+            print('No profile was selected')
+            return
         self.prepare_script()
         self.show_output()
         if self.should_run:
             self.execute()
+        else:
+            print('Operation has been cancelled')
         if self.tempfile:
             run(['rm', self.tempfile])
 
@@ -95,4 +101,6 @@ if __name__ == '__main__':
         ob = OpenBackup()
         ob.make()
     except KeyboardInterrupt:
-        print('Exit...')
+        pass
+    finally:
+        print('Exitting...')
