@@ -15,7 +15,7 @@ SCENARIO_SRC = [
         'g.xml',
         'h.go',
         {'dir3':[]},
-        {'dir6': ['z.zip', 'b.bz2', {'dir7': ['t.tar']}]}
+        {'dir6': ['z.zip', 'b.bz2', {'dir7': ['t.tar', '__r.rar']}]}
     ]
 SCENARIO_TGT = [
         {'dir1' : 
@@ -46,7 +46,7 @@ EXP_GEN_RSYNC = [
     'if pgrep some_pid; then',
     '  echo "ERROR some_pid must be closed in order to backup the configuration" >> some/pa\\ th/test.log',
     'else',
-    f'  tar -cf dir1/arch.tar {SWD}/data/src/dir6 | tee -a some/pa\\ th/test.log',
+    f'  tar -cf dir1/arch.tar {SWD}/data/src/dir6 --exclude='+'{*/__.*} | tee -a some/pa\\ th/test.log',
     'fi',
     f'rsync -truOvn {SWD}/data/src/g.xml {DDP} $log ',
     f'rsync -truOvn {SWD}/data/src/'+'{h.go,l.doc} tests/data/tgt/dir1/conf $log ',
@@ -88,7 +88,7 @@ EXP_GENERATE_PREPARE_SCRIPT = [
     'if pgrep some_pid; then',
     '  echo "ERROR some_pid must be closed in order to backup the configuration" >> some/pa\\ th/test.log',
     'else',
-    f'  tar -cf dir1/arch.tar {SWD}/data/src/dir6 | tee -a some/pa\\ th/test.log',
+    f'  tar -cf dir1/arch.tar {SWD}/data/src/dir6 --exclude='+'{*/__.*} | tee -a some/pa\\ th/test.log',
     'fi',
     f'rsync -truOvn {SWD}/data/src/g.xml {DDP} $log ',
     f'rsync -truOvn {SWD}/data/src/' + '{h.go,l.doc} tests/data/tgt/dir1/conf $log ',

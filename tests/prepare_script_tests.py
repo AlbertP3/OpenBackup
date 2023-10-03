@@ -38,6 +38,10 @@ class PrepareScriptTests(TestCase, BasicGenerator):
         res = self.rsync_generator.get_archive_cmd({'dst': './dir/folder/arch.tar', 
                                                     'src': '/x/y/file'})
         self.assertEqual(res, "tar -cf ./dir/folder/arch.tar /x/y/file | tee -a some/pa\ th/test.log")
+        res = self.rsync_generator.get_archive_cmd({'dst': './dir/folder/arch.tar', 
+                                                    'src': '/x/y/file',
+                                                    'exclude': ["*/__.*"]})
+        self.assertEqual(res, "tar -cf ./dir/folder/arch.tar /x/y/file --exclude={*/__.*} | tee -a some/pa\ th/test.log")
     
     def test_gen_post_cmds(self):
         '''Verify that method returns proper value'''

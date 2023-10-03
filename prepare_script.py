@@ -91,7 +91,8 @@ class RsyncGenerator(BasicGenerator):
         
     def get_archive_cmd(self, path) -> str:
         comp = self.compression_options.get(path['src'].split('.')[-1], '')
-        return f"tar -c{comp}f {path['dst']} {path['src']} | tee -a {self.config['rsync']['settings']['rlogfilename']}"
+        excl = " --exclude={"+','.join(path['exclude'])+"}" if path.get('exclude') else ''
+        return f"tar -c{comp}f {path['dst']} {path['src']}{excl} | tee -a {self.config['rsync']['settings']['rlogfilename']}"
 
     def get_extract_cmd(self, path) -> str:
         comp = self.compression_options.get(path['src'].split('.')[-1], '')
