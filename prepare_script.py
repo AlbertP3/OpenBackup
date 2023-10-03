@@ -64,9 +64,9 @@ class RsyncGenerator(BasicGenerator):
 
     def gen_require_closed(self, cmd:str, path):
         if path.get('archive'):
-            cmd = f"{self.get_archive_cmd(path)}"
+            cmd = self.get_archive_cmd(path)
         elif path.get('extract'):
-            cmd = f"{self.get_extract_cmd(path)}"
+            cmd = self.get_extract_cmd(path)
         self.out.extend([
             f"if pgrep {path['require_closed']}; then", 
             f'''  echo "ERROR {path['require_closed']} must be closed in order to backup the configuration" >> {self.logpath}''',

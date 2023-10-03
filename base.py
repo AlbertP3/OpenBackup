@@ -13,8 +13,7 @@ class BasicGenerator:
 
     def parse_path(self, path:str) -> str:
         '''Parse single path'''
-        path = self.re_space.sub('\ ', path)
-        return os.path.normpath(path)
+        return os.path.normpath(self.re_space.sub('\ ', path))
 
     def parse_config(self, config:dict) -> dict:
         self.SWD = self.parse_path(self.SWD)
