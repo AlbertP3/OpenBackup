@@ -33,8 +33,8 @@ Parameters in config:
             exclude         - rsync glob patterns to ommit matched paths
             isconf          - is configuration, applies rconfmode args
             require_closed  - check if given process is running, using pgrep
-            archive         - tar the file/dir and send it to destination
-            extract         - untar the file/dir and send it to destination
+            archive         - boolean, create an archive. Determines compression based on filename
+            extract         - boolean, extract from archive. Determines compression based on filename. Implied strip-component=1
         settings:
            *rmode           - args for rsync
            *rconfmode       - args for rsync if is_conf
