@@ -11,6 +11,7 @@ class RsyncGenerator(BasicGenerator):
     def __init__(self, config):
         self.config = config
         self.logpath = self.config['rsync']['settings']['rlogfilename']
+        self.compression_options = {'tar': '', 'bz2': 'j', 'gzip': 'z'}
     
     def generate(self) -> list:
         '''Create a list of all operations - foundament of the bash script'''
@@ -89,8 +90,9 @@ class RsyncGenerator(BasicGenerator):
             self.out.extend(["# Apply changes (renamed/deleted/moved)", *res, ''])
         
     def get_archive_cmd(self, path) -> str:
-        tgt = self.get_target_path({'dst': path['dst'], 'src': path['archive']})
-        return f"tar -cjf {tgt}.bz2 {path['src']} | tee -a {self.config['rsync']['settings']['rlogfilename']}"
+        comp = self.compression_options.get(path['src'].split('.')[-1], '')
+        return f"tar -c{comp}f {path['dst']} {path['src']} | tee -a {self.config['rsync']['settings']['rlogfilename']}"
 
     def get_extract_cmd(self, path) -> str:
-        return f"tar -xjf {path['src']}.bz2 -C {path['dst']} --strip-components=1 | tee -a {self.config['rsync']['settings']['rlogfilename']}"
+        comp = self.compression_options.get(path['src'].split('.')[-1], '')
+        return f"tar -x{comp}f {path['src']} -C {path['dst']} --strip-components=1 | tee -a {self.config['rsync']['settings']['rlogfilename']}"
