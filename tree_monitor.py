@@ -25,6 +25,8 @@ class TreeMonitor(BasicGenerator):
         t0 = perf_counter()
         self.diff = set()
         for path in self.get_expanded_paths(self.config['rsync']['paths']):
+            if any(k in path.keys() for k in {'archive', 'extract'}):
+                continue
             excl = self.parse_rsync_exclude(path.get('exclude'))
             parsed_src = self.__get_parsed_src(path, excl)
             tgt_files = self.btr(self.get_target_path({**path, 'src': os.path.basename(path['src'])}), excl)

@@ -2,11 +2,16 @@
     "rsync": {
       "paths": [
         {
-            "src": "dir1",
-            "exclude": ["*/venv*", "*/__.*"],
-            "isconf": true,
-            "require_closed": "some_pid",
-            "archive": "arch"
+          "src": "dir1",
+          "exclude": ["*/venv*", "*/__.*"]
+        },
+        {
+          "src": "dir6",
+          "dst": "dir1/arch.tar",
+          "require_closed": "some_pid",
+          "exclude": ["*/__.*"],
+          "isconf": true,
+          "archive": true
         },
         {
             "src": "g.xml"

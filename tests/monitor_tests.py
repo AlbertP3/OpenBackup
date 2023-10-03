@@ -105,7 +105,7 @@ class MonitorTests(TestCase, BasicGenerator):
         self.assertIn(f'{SWD}/data/src/h.go', paths)
         self.assertIn(f'{SWD}/data/src/l.doc', paths)
         self.assertNotIn(f'{SWD}/data/src/'+'{h,go,l.doc}', paths)
-        self.assertEqual(len(paths), 4)
+        self.assertEqual(len(paths), 5)
 
     def test_expand_paths_2(self):
         '''Verify that paths are expanded correctly'''

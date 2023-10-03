@@ -7,7 +7,7 @@ def parse_config(config:dict):
     for i, _ in enumerate(config['rsync']['paths']):
         config['rsync']['paths'][i]['src'] = os.path.join(SWD, 'data/src', config['rsync']['paths'][i]['src'])
     config['rsync']['settings']['defaultdst'] = DDP
-    config['rsync']['paths'][2]['dst'] = os.path.join('./tests/data/tgt', config['rsync']['paths'][2]['dst'])
+    config['rsync']['paths'][3]['dst'] = os.path.join('./tests/data/tgt', config['rsync']['paths'][3]['dst'])
     return config
 
 
