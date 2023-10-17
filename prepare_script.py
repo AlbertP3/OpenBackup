@@ -1,12 +1,27 @@
 import os
-from tree_monitor import TreeMonitor
-from base import BasicGenerator
+from abc import ABC, abstractmethod
+
+from monitors import LinuxMonitor
 
 
 
-class RsyncGenerator(BasicGenerator):
+class AgnosticScriptGenerator(ABC):
+
+    @abstractmethod
+    def generate(self) -> list:
+        '''Prepare the script'''
+        ...
+    
+    def parse_cmd(self, cmd:str) -> str:
+        '''Replace special tags with corresponding variables'''
+        cmd = cmd.replace(r'${LOG_PATH}', self.logpath)
+        return cmd
+
+
+
+class LinuxScriptGenerator(AgnosticScriptGenerator):
     '''Generate instructions for the bash script. It employs rsync 
-       to upload missing/modified files and a TreeMonitor to track renamed/moved/deleted'''
+       to upload missing/modified files and a LinuxMonitor to track renamed/moved/deleted'''
 
     def __init__(self, config):
         self.config = config
@@ -54,6 +69,9 @@ class RsyncGenerator(BasicGenerator):
                 self.out.append(c)
         self.out.append('')
 
+    def parse_path(self, path:str) -> str:
+        return os.path.normpath(self.re_space.sub('\ ', path))
+    
     def gen_cmds(self, which:str):
         '''Generate which:(pre,post) commands if available'''
         if not self.config['rsync']['settings'].get('cmd', dict()).get(which): return
@@ -78,14 +96,9 @@ class RsyncGenerator(BasicGenerator):
         make_nodes = [d for d in self.config['rsync']['settings']['mkdirs'] if not os.path.exists(d)]
         if make_nodes:
             self.out.extend(['# Create directories', *[f"mkdir -p {f}" for f in make_nodes], ''])
-        
-    def parse_cmd(self, cmd:str) -> str:
-        '''Replace special tags with corresponding variables'''
-        cmd = cmd.replace(r'${LOG_PATH}', self.logpath)
-        return cmd
 
     def gen_monitor_actions(self):
-        monitor = TreeMonitor(self.config)
+        monitor = LinuxMonitor(self.config)
         if res:=monitor.generate():
             self.out.extend(["# Apply changes (renamed/deleted/moved)", *res, ''])
         

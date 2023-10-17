@@ -2,7 +2,7 @@
 A tool for making incremental backups
 
 ## Description
-This program builds a bash script following settings specified in the configuration file. 'rsync' command is used to track new|modified files and a custom TreeMonitor tracks renames|moves|deletions. Then a generated script is presented to the user for acceptation. It's main purpose is to make incremental backups - all files that are present only on the Destination will be marked for deletion and those created|modified on the Source will overwrite corresponding ones on Destination.
+This program builds a bash script following settings specified in the configuration file. 'rsync' command is used to track new|modified files and a custom Monitor tracks renames|moves|deletions. Then a generated script is presented to the user for acceptation. It's main purpose is to make incremental backups - all files that are present only on the Destination will be marked for deletion and those created|modified on the Source will overwrite corresponding ones on Destination.
 
 ## Usage
 <ol>
@@ -12,7 +12,7 @@ This program builds a bash script following settings specified in the configurat
 <li>Auto: by matching hostname, looking for 'default.json' or selecting the only available file</li>
 <li>Manual: a list of available profiles is presented to be selected by their index</li>
 </ol>
-<li>Second, a bash script will begin to generate. This can take some time, based on the amount of files to be scanned (~12s/10_000 files)
+<li>Second, a bash script will begin to generate. This can take some time, based on the amount of files to be scanned
 <li>Then a temporary file with generated instructions is created and presented to the user in a way specified by the 'editor' setting. It can be reviewed and edited at will
 <ol>
 <li>If 'editor' is specified then it's command is used to present the generated script. If it's saved then the script will be executed (mtime > ctime)

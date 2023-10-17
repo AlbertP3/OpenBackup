@@ -1,30 +1,22 @@
 import os
 import re
 from time import perf_counter
-from base import BasicGenerator
+from abc import ABC, abstractmethod
 
 
-class TreeMonitor(BasicGenerator):
-    '''Supports rsync in detecting files that were deleted/renamed/moved. 
-       Recursively compares directory tree between destination and source and parses the result to actions.
-       **To be used only for incremental backups** - all surplus files from destination will be marked for deletion'''
 
-    def __init__(self, config:dict):
-        self.config = config
-        self.mkdir_paths = {d for d in self.config['rsync']['settings']['mkdirs']}
+class AgnosticMonitor(ABC):
 
+    @abstractmethod
     def generate(self) -> list:
-        self._files_scanned = 0
-        self.out = list()
-        self.collect_diff()
-        self.gen_actions()
-        return self.out
+        '''Create actions from the Monitor results'''
+        ...
 
-    def collect_diff(self):
+    def collect_diff(self, paths:list):
         '''Build a set of files that are present only on the target'''
         t0 = perf_counter()
         self.diff = set()
-        for path in self.get_expanded_paths(self.config['rsync']['paths']):
+        for path in paths:
             if any(k in path.keys() for k in {'archive', 'extract'}):
                 continue
             excl = self.parse_rsync_exclude(path.get('exclude'))
@@ -62,7 +54,42 @@ class TreeMonitor(BasicGenerator):
             pass
         except NotADirectoryError:
             self.__btr_res.add(rootdir)
+    
+    def filter_diff(self, diff:set) -> set:
+        '''Remove unwanted elements from the diff'''
+        for d in diff:
+            if os.path.isdir(d):
+                # if a dir is removed, don't include files
+                diff = {i for i in diff if not i.startswith(d)}
+                diff.add(d)
+        return diff
 
+
+
+class LinuxMonitor(AgnosticMonitor):
+    '''Supports rsync in detecting files that were deleted/renamed/moved. 
+       Recursively compares directory tree between destination and source and parses the result to actions.
+       **To be used only for incremental backups** - all surplus files from destination will be marked for deletion'''
+
+    def __init__(self, config:dict):
+        self.config = config
+        self.mkdir_paths = {d for d in self.config['rsync']['settings']['mkdirs']}
+        self.re_space = re.compile(r'(?<!\\) ')
+
+    def generate(self) -> list:
+        self._files_scanned = 0
+        self.out = list()
+        self.collect_diff(self.get_expanded_paths(self.config['rsync']['paths']))
+        self.gen_actions()
+        return self.out
+
+    def parse_path(self, path:str) -> str:
+        return os.path.normpath(self.re_space.sub('\ ', path))
+    
+    def get_target_path(self, path:dict) -> str:
+        '''Returns path where the file will be stored on destination'''
+        return os.path.join(path['dst'], path['src'])
+    
     def gen_actions(self):
         actions = sorted([self.parse_path(p) for p in self.diff])
         self.out.extend([f"rm -rfv {f} | tee -a {self.config['rsync']['settings']['rlogfilename']}" for f in actions])
@@ -84,12 +111,11 @@ class TreeMonitor(BasicGenerator):
         for p in to_add:
             exp_paths.append(p)
         return exp_paths
-        
-    def filter_diff(self, diff:set) -> set:
-        '''Remove unwanted elements from the diff'''
-        for d in diff:
-            if os.path.isdir(d):
-                # if a dir is removed, don't include files
-                diff = {i for i in diff if not i.startswith(d)}
-                diff.add(d)
-        return diff
+
+    # TODO implement proper parsing
+    def parse_rsync_exclude(self, excl:list) -> re.Pattern:
+        '''Parses the rsync glob patterns to regex'''
+        if not excl: res = r'.^'
+        else:
+            res = '(' + '|'.join(p[1:-1] for p in excl) + ')'
+        return re.compile(res)

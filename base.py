@@ -1,18 +1,27 @@
 import re
 import os
+from subprocess import run
+from abc import ABC, abstractmethod
+
+
+class AgnosticBase(ABC):
+
+    @abstractmethod
+    def parse_config(self) -> dict:
+        ...
+
+    @abstractmethod
+    def execute(self):
+        ...
 
 
 
-class BasicGenerator:
+class LinuxBase(AgnosticBase):
     re_space = re.compile(r'(?<!\\) ')
     SWD = os.path.dirname(os.path.abspath(__file__))
-
-    def get_target_path(self, path:dict) -> str:
-        '''Returns path where the file will be stored on destination'''
-        return os.path.join(path['dst'], path['src'])
+    FN = type('Functions', (object,), {'content':{'rf':'rm', 'rmrf':'rm -rf', 'exe':'sh'}})()
 
     def parse_path(self, path:str) -> str:
-        '''Parse single path'''
         return os.path.normpath(self.re_space.sub('\ ', path))
 
     def parse_config(self, config:dict) -> dict:
@@ -29,14 +38,7 @@ class BasicGenerator:
                 config['rsync']['paths'][i]['dst'] = config['rsync']['settings']['defaultdst']
         return config
 
-    # TODO implement proper parsing
-    def parse_rsync_exclude(self, excl:list) -> re.Pattern:
-        '''Parses the rsync glob patterns to regex'''
-        if not excl: res = r'.^'
-        else:
-            res = '(' + '|'.join(p[1:-1] for p in excl) + ')'
-        return re.compile(res)
-
-    def join_regex(self, regex:list, prepend:str='') -> re.Pattern:
-        '''Creates regex pattern from a list of separate expressions'''
-        return re.compile(f'{prepend}(' + '|'.join(regex) + ')')
+    def execute(self):
+        '''Runs the backup script'''
+        run(['chmod', '+x', self.tempfile])
+        run([f'./{self.tempfile}'], shell=True)

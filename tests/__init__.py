@@ -13,4 +13,4 @@ def parse_config(config:dict):
 
 SWD = os.path.dirname(os.path.abspath(__file__))
 DDP = os.path.join(SWD, 'data/tgt')
-config = parse_config(json.load(open(f"{SWD}/../profiles/test.json", 'r')))
+config = parse_config(json.load(open(f"{SWD}/profiles/test.json", 'r')))

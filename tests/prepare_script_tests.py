@@ -3,19 +3,19 @@ from copy import deepcopy
 from unittest import TestCase
 
 from . import SWD, config
-from prepare_script import RsyncGenerator
-from base import BasicGenerator
+from prepare_script import LinuxScriptGenerator
+from base import LinuxBase
 from tests.scenarios import EXP_GEN_RSYNC, EXP_PREPARE_SCRIPT_ACTIONS, EXP_GENERATE_PREPARE_SCRIPT
 
 
 
-class PrepareScriptTests(TestCase, BasicGenerator):
+class LinuxPrepareScriptTests(TestCase, LinuxBase):
     config = deepcopy(config)
     maxDiff = None
 
     def setUp(self):
         super().setUp()
-        self.rsync_generator = RsyncGenerator(self.parse_config(self.config))
+        self.rsync_generator = LinuxScriptGenerator(self.parse_config(self.config))
         self.rsync_generator.out = list()
 
     def tearDown(self):

@@ -4,18 +4,18 @@ import os
 from copy import deepcopy
 
 from unittest import TestCase
-from tree_monitor import TreeMonitor
-from base import BasicGenerator
+from monitors import LinuxMonitor
+from base import LinuxBase
 from . import SWD, config, DDP
 
 
 
-class MonitorTests(TestCase, BasicGenerator):
+class LinuxMonitorTests(TestCase, LinuxBase):
     exp_log_path = 'some/pa\ th/test.log'
 
     def setUp(self):
         super().setUp()
-        self.monitor = TreeMonitor(self.parse_config(deepcopy(config)))
+        self.monitor = LinuxMonitor(self.parse_config(deepcopy(config)))
 
     def tearDown(self):
         super().tearDown()
@@ -68,7 +68,7 @@ class MonitorTests(TestCase, BasicGenerator):
         '''Verify return value of collect_diff'''
         self.monitor._files_scanned = 0
         self.monitor.out = list()
-        self.monitor.collect_diff()
+        self.monitor.collect_diff(self.monitor.get_expanded_paths(self.monitor.config['rsync']['paths']))
         self.assertEqual(self.monitor.diff, 
             {f'{DDP}/dir1/r_ b.txt', f'{DDP}/dir1/dir 4/r_i.ini', f'{DDP}/dir1/r_dir5'})
         self.assertEqual(self.monitor._files_scanned, 11)
@@ -77,7 +77,7 @@ class MonitorTests(TestCase, BasicGenerator):
         '''Verify that diff is filtered correctly'''
         self.monitor._files_scanned = 0
         self.monitor.out = list()
-        self.monitor.collect_diff()
+        self.monitor.collect_diff(self.monitor.get_expanded_paths(self.monitor.config['rsync']['paths']))
         self.assertEqual(self.monitor.diff, 
             {f'{DDP}/dir1/r_ b.txt', f'{DDP}/dir1/dir 4/r_i.ini',
             f'{DDP}/dir1/r_dir5'}
