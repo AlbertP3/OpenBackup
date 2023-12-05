@@ -41,7 +41,7 @@ class OpenBackup(SystemBase):
     def load_config(self):
         '''Sources config file(s) from the 'profiles' directory. 
            Includes automation: default.json, single file or platform name'''
-        profiles = os.listdir(f"{self.SWD}/profiles")
+        profiles = sorted(os.listdir(f"{self.SWD}/profiles"))
         if 'default.json' in profiles:
             selected = 'default.json'
         elif len(profiles) == 1:

@@ -103,10 +103,12 @@ class LinuxScriptGenerator(AgnosticScriptGenerator):
             self.out.extend(["# Apply changes (renamed/deleted/moved)", *res, ''])
         
     def get_archive_cmd(self, path) -> str:
-        comp = self.compression_options.get(path['src'].split('.')[-1], '')
+        ext = path['dst'].split('.')[-1]
+        comp = self.compression_options.get(ext, '')
         excl = " --exclude={"+','.join(path['exclude'])+"}" if path.get('exclude') else ''
-        return f"tar -c{comp}f {path['dst']} {path['src']}{excl} | tee -a {self.config['rsync']['settings']['rlogfilename']}"
+        return f'''tar -c{comp}f {path['dst']} {path['src']}{excl} && "Created {ext} Archive {path['dst']} From {path['src']}" >> {self.logpath}'''
 
     def get_extract_cmd(self, path) -> str:
-        comp = self.compression_options.get(path['src'].split('.')[-1], '')
-        return f"tar -x{comp}f {path['src']} -C {path['dst']} --strip-components=1 | tee -a {self.config['rsync']['settings']['rlogfilename']}"
+        ext = path['src'].split('.')[-1]
+        comp = self.compression_options.get(ext, '')
+        return f'''tar -x{comp}f {path['src']} -C {path['dst']} --strip-components=1 && "Extracted {ext} Archive {path['src']} To {path['dst']}" >> {self.logpath}'''

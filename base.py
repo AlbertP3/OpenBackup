@@ -19,7 +19,7 @@ class AgnosticBase(ABC):
 class LinuxBase(AgnosticBase):
     re_space = re.compile(r'(?<!\\) ')
     SWD = os.path.dirname(os.path.abspath(__file__))
-    FN = type('Functions', (object,), {'content':{'rf':'rm', 'rmrf':'rm -rf', 'exe':'sh'}})()
+    FN = type('Functions', (object,), {'rm':'rm', 'rmrf':'rm -rf', 'exe':'sh'})()
 
     def parse_path(self, path:str) -> str:
         return os.path.normpath(self.re_space.sub('\ ', path))

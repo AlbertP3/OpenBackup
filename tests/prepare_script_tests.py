@@ -23,7 +23,7 @@ class LinuxPrepareScriptTests(TestCase, LinuxBase):
 
     def test_parse_paths(self):
         '''Verify that paths are parsed correctly'''
-        self.assertEqual(self.rsync_generator.config['rsync']['settings']['rlogfilename'], 'some/pa\ th/test.log')
+        self.assertEqual(self.rsync_generator.config['rsync']['settings']['rlogfilename'], r'some/pa\ th/test.log')
         for i, v in enumerate(self.rsync_generator.config['rsync']['paths']):
             self.assertEqual(v['src'], self.parse_path(v['src']))
             self.assertEqual(v['dst'], self.parse_path(v['dst']))
@@ -37,11 +37,11 @@ class LinuxPrepareScriptTests(TestCase, LinuxBase):
         '''Verify that method returns proper value'''
         res = self.rsync_generator.get_archive_cmd({'dst': './dir/folder/arch.tar', 
                                                     'src': '/x/y/file'})
-        self.assertEqual(res, "tar -cf ./dir/folder/arch.tar /x/y/file | tee -a some/pa\ th/test.log")
+        self.assertEqual(res, '''tar -cf ./dir/folder/arch.tar /x/y/file && "Created tar Archive ./dir/folder/arch.tar From /x/y/file" >> some/pa\ th/test.log''')
         res = self.rsync_generator.get_archive_cmd({'dst': './dir/folder/arch.tar', 
                                                     'src': '/x/y/file',
                                                     'exclude': ["*/__.*"]})
-        self.assertEqual(res, "tar -cf ./dir/folder/arch.tar /x/y/file --exclude={*/__.*} | tee -a some/pa\ th/test.log")
+        self.assertEqual(res, '''tar -cf ./dir/folder/arch.tar /x/y/file --exclude={*/__.*} && "Created tar Archive ./dir/folder/arch.tar From /x/y/file" >> some/pa\ th/test.log''')
     
     def test_gen_post_cmds(self):
         '''Verify that method returns proper value'''
