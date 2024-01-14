@@ -6,7 +6,7 @@ from subprocess import run
 from platform import node, system
 
 from base import *
-from prepare_script import *
+from script_gen import *
 
 if system() == 'Linux':
     SystemBase = LinuxBase

@@ -26,16 +26,16 @@ class LinuxBase(AgnosticBase):
 
     def parse_config(self, config:dict) -> dict:
         self.SWD = self.parse_path(self.SWD)
-        config['rsync']['settings']['rlogfilename'] = self.parse_path(config['rsync']['settings']['rlogfilename'])
-        config['rsync']['settings']['defaultdst'] = self.parse_path(config['rsync']['settings'].get('defaultdst', '.'))
-        for i, v in enumerate(config['rsync']['settings'].setdefault('mkdirs', [])):
-            config['rsync']['settings']['mkdirs'][i] = self.parse_path(v)
-        for i, v in enumerate(config['rsync']['paths']):
-            config['rsync']['paths'][i]['src'] = self.parse_path(v['src'])
+        config['settings']['rlogfilename'] = self.parse_path(config['settings']['rlogfilename'])
+        config['settings']['defaultdst'] = self.parse_path(config['settings'].get('defaultdst', '.'))
+        for i, v in enumerate(config['settings'].setdefault('mkdirs', [])):
+            config['settings']['mkdirs'][i] = self.parse_path(v)
+        for i, v in enumerate(config['paths']):
+            config['paths'][i]['src'] = self.parse_path(v['src'])
             try:
-                config['rsync']['paths'][i]['dst'] = self.parse_path(v['dst'])
+                config['paths'][i]['dst'] = self.parse_path(v['dst'])
             except KeyError:
-                config['rsync']['paths'][i]['dst'] = config['rsync']['settings']['defaultdst']
+                config['paths'][i]['dst'] = config['settings']['defaultdst']
         return config
 
     def execute(self):

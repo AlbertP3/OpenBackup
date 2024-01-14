@@ -3,7 +3,7 @@ from copy import deepcopy
 from unittest import TestCase
 
 from . import SWD, config
-from prepare_script import LinuxScriptGenerator
+from script_gen import LinuxScriptGenerator
 from base import LinuxBase
 from tests.scenarios import EXP_GEN_RSYNC, EXP_PREPARE_SCRIPT_ACTIONS, EXP_GENERATE_PREPARE_SCRIPT
 
@@ -23,25 +23,25 @@ class LinuxPrepareScriptTests(TestCase, LinuxBase):
 
     def test_parse_paths(self):
         '''Verify that paths are parsed correctly'''
-        self.assertEqual(self.rsync_generator.config['rsync']['settings']['rlogfilename'], r'some/pa\ th/test.log')
-        for i, v in enumerate(self.rsync_generator.config['rsync']['paths']):
+        self.assertEqual(self.rsync_generator.config['settings']['rlogfilename'], r'some/pa\ th/test.log')
+        for i, v in enumerate(self.rsync_generator.config['paths']):
             self.assertEqual(v['src'], self.parse_path(v['src']))
             self.assertEqual(v['dst'], self.parse_path(v['dst']))
     
-    def test_gen_rsync(self):
+    def test_gen_tool_actions(self):
         '''Verify that rsync is generated properly'''
-        self.rsync_generator.gen_rsync()
+        self.rsync_generator.gen_tool_actions()
         self.assertEqual(self.rsync_generator.out, EXP_GEN_RSYNC)
     
     def test_gen_archive_cmd(self):
         '''Verify that method returns proper value'''
         res = self.rsync_generator.get_archive_cmd({'dst': './dir/folder/arch.tar', 
                                                     'src': '/x/y/file'})
-        self.assertEqual(res, '''tar -cf ./dir/folder/arch.tar /x/y/file && "Created tar Archive ./dir/folder/arch.tar From /x/y/file" >> some/pa\ th/test.log''')
+        self.assertEqual(res, '''tar -cf ./dir/folder/arch.tar /x/y/file && echo "Created tar Archive ./dir/folder/arch.tar From /x/y/file" >> some/pa\ th/test.log''')
         res = self.rsync_generator.get_archive_cmd({'dst': './dir/folder/arch.tar', 
                                                     'src': '/x/y/file',
                                                     'exclude': ["*/__.*"]})
-        self.assertEqual(res, '''tar -cf ./dir/folder/arch.tar /x/y/file --exclude={*/__.*} && "Created tar Archive ./dir/folder/arch.tar From /x/y/file" >> some/pa\ th/test.log''')
+        self.assertEqual(res, '''tar -cf ./dir/folder/arch.tar /x/y/file --exclude={*/__.*} && echo "Created tar Archive ./dir/folder/arch.tar From /x/y/file" >> some/pa\ th/test.log''')
     
     def test_gen_post_cmds(self):
         '''Verify that method returns proper value'''

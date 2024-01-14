@@ -67,19 +67,19 @@ class AgnosticMonitor(ABC):
 
 
 class LinuxMonitor(AgnosticMonitor):
-    '''Supports rsync in detecting files that were deleted/renamed/moved. 
+    '''Supports the sync tool (rsync, ...) in detecting files that were deleted/renamed/moved. 
        Recursively compares directory tree between destination and source and parses the result to actions.
        **To be used only for incremental backups** - all surplus files from destination will be marked for deletion'''
 
     def __init__(self, config:dict):
         self.config = config
-        self.mkdir_paths = {d for d in self.config['rsync']['settings']['mkdirs']}
+        self.mkdir_paths = {d for d in self.config['settings']['mkdirs']}
         self.re_space = re.compile(r'(?<!\\) ')
 
     def generate(self) -> list:
         self._files_scanned = 0
         self.out = list()
-        self.collect_diff(self.get_expanded_paths(self.config['rsync']['paths']))
+        self.collect_diff(self.get_expanded_paths(self.config['paths']))
         self.gen_actions()
         return self.out
 
@@ -92,7 +92,7 @@ class LinuxMonitor(AgnosticMonitor):
     
     def gen_actions(self):
         actions = sorted([self.parse_path(p) for p in self.diff])
-        self.out.extend([f"rm -rfv {f} | tee -a {self.config['rsync']['settings']['rlogfilename']}" for f in actions])
+        self.out.extend([f"rm -rfv {f} | tee -a {self.config['settings']['rlogfilename']}" for f in actions])
 
     def get_expanded_paths(self, paths:list) -> list:
         '''If path contains {x,y,...}, then it will be divided into separate 'plain' paths'''

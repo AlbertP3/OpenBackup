@@ -68,7 +68,7 @@ class LinuxMonitorTests(TestCase, LinuxBase):
         '''Verify return value of collect_diff'''
         self.monitor._files_scanned = 0
         self.monitor.out = list()
-        self.monitor.collect_diff(self.monitor.get_expanded_paths(self.monitor.config['rsync']['paths']))
+        self.monitor.collect_diff(self.monitor.get_expanded_paths(self.monitor.config['paths']))
         self.assertEqual(self.monitor.diff, 
             {f'{DDP}/dir1/r_ b.txt', f'{DDP}/dir1/dir 4/r_i.ini', f'{DDP}/dir1/r_dir5'})
         self.assertEqual(self.monitor._files_scanned, 11)
@@ -77,7 +77,7 @@ class LinuxMonitorTests(TestCase, LinuxBase):
         '''Verify that diff is filtered correctly'''
         self.monitor._files_scanned = 0
         self.monitor.out = list()
-        self.monitor.collect_diff(self.monitor.get_expanded_paths(self.monitor.config['rsync']['paths']))
+        self.monitor.collect_diff(self.monitor.get_expanded_paths(self.monitor.config['paths']))
         self.assertEqual(self.monitor.diff, 
             {f'{DDP}/dir1/r_ b.txt', f'{DDP}/dir1/dir 4/r_i.ini',
             f'{DDP}/dir1/r_dir5'}
@@ -101,7 +101,7 @@ class LinuxMonitorTests(TestCase, LinuxBase):
     
     def test_expand_paths(self):
         '''Verify that paths are expanded correctly'''
-        paths = {v['src'] for v in self.monitor.get_expanded_paths(self.monitor.config['rsync']['paths'])}
+        paths = {v['src'] for v in self.monitor.get_expanded_paths(self.monitor.config['paths'])}
         self.assertIn(f'{SWD}/data/src/h.go', paths)
         self.assertIn(f'{SWD}/data/src/l.doc', paths)
         self.assertNotIn(f'{SWD}/data/src/'+'{h,go,l.doc}', paths)
