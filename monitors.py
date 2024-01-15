@@ -131,6 +131,7 @@ class PythonMonitor(AgnosticMonitor):
             'cp':'copy', 'rm':'remove', 'up':'update'
         })()
         self.results_ready = False
+        self.sync_prec = self.config['settings'].get('sync_precision', 1)
 
     def generate(self) -> list[dict[str, str, str]]:
         '''Returns list of dicts [{src, dst, action, batch_id}].
@@ -150,21 +151,21 @@ class PythonMonitor(AgnosticMonitor):
         self.results = self.filtered_sync(self.results)
         self.results.extend(self.get_diff())
         self.results_ready = True
-        print(f'Scanned {self._files_seen:,} files in {perf_counter()-t0:.2f} seconds')
+        print(f'Compared {self._files_seen:,} files in {perf_counter()-t0:.2f} seconds')
         return self.results
 
     def get_sync(self, path:dict) -> list:
+        if path.get('isconf', False):
+            return [{'src': path['src'], 'dst':path['dst'], 'action': self.actions.cp, 'batch_id': self.batch_id}]
         out = list()
         lcompi = path['src'].rfind('/')+1
-        isconf = path.get('isconf', False)
         excl = self.parse_rsync_exclude(path.get('exclude'))
         src_tree = self.btr(path['src'], excl)
         for srcpath in src_tree:
+            dstpath = self.get_target_path({**path, 'src': srcpath[lcompi:]})
             try:
-                dstpath = self.get_target_path({**path, 'src': srcpath[lcompi:]})
-                if isconf:
-                    raise FileNotFoundError
-                elif os.stat(srcpath).st_mtime > os.stat(dstpath).st_mtime:
+                # st_mtime precision may vary. Adding <sync_prec> seconds for practical reasons
+                if os.stat(srcpath).st_mtime > os.stat(dstpath).st_mtime + self.sync_prec:
                     if os.path.isfile(srcpath):
                         out.append({'src': srcpath, 'dst': dstpath, 'action': self.actions.up,'batch_id': self.batch_id})
                     else:
@@ -184,9 +185,6 @@ class PythonMonitor(AgnosticMonitor):
     def filtered_sync(self, generated:list[dict[str, str, str]]):
         for i in generated:
             if os.path.isdir(i['dst']):
-                generated = [p for p in generated if 
-                             not p['dst'].startswith(i['dst']) 
-                             or p['action'] == i['action']
-                            ]
+                generated = [p for p in generated if not p['dst'].startswith(i['dst']) ]
                 generated.append(i)
         return generated

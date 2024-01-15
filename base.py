@@ -6,20 +6,8 @@ from abc import ABC, abstractmethod
 
 class AgnosticBase(ABC):
 
-    @abstractmethod
-    def parse_config(self) -> dict:
-        ...
-
-    @abstractmethod
-    def execute(self):
-        ...
-
-
-
-class LinuxBase(AgnosticBase):
     re_space = re.compile(r'(?<!\\) ')
     SWD = os.path.dirname(os.path.abspath(__file__))
-    FN = type('Functions', (object,), {'rm':'rm', 'rmrf':'rm -rf', 'exe':'sh'})()
 
     def parse_path(self, path:str) -> str:
         return os.path.normpath(self.re_space.sub('\ ', path))
@@ -38,7 +26,25 @@ class LinuxBase(AgnosticBase):
                 config['paths'][i]['dst'] = config['settings']['defaultdst']
         return config
 
-    def execute(self):
+
+
+class LinuxBase:
+    
+    FN = type('Functions', (object,), {'rm':'rm', 'rmrf':'rm -rf', 'exe':'sh'})()
+
+    @staticmethod
+    def execute(tempfile):
         '''Runs the backup script'''
-        run(['chmod', '+x', self.tempfile])
-        run([f'./{self.tempfile}'], shell=True)
+        run(['chmod', '+x', tempfile])
+        run([f'./{tempfile}'], shell=True)
+
+
+
+class PythonBase:
+    
+    FN = type('Functions', (object,), {'exe':'py', 'rm': 'rm'})()
+
+    @staticmethod
+    def execute(tempfile):
+        '''Runs the backup script'''
+        run([f'python3 ./{tempfile}'], shell=True)

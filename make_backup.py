@@ -8,16 +8,9 @@ from platform import node, system
 from base import *
 from script_gen import *
 
-# TODO
-if system() == 'Linux':
-    SystemBase = LinuxBase
-    ScriptGenerator = LinuxScriptGenerator
-else:
-    raise Exception('Unsupported OS!')
 
 
-
-class OpenBackup(SystemBase):
+class OpenBackup(AgnosticBase):
     '''Interactively handles the backup process'''
 
     def __init__(self):
@@ -54,14 +47,29 @@ class OpenBackup(SystemBase):
                 print(f"{i+1}. {v.split('.')[0]}")
             selected = profiles[int(input("Select profile: "))-1]
         self.config = self.parse_config(json.load(open(f'{self.SWD}/profiles/{selected}', 'r')))
+        self.load_platform_base()
         self.editor:list = self.config['settings'].get('editor', [])
         print(f"Loaded {selected}")
     
+    def load_platform_base(self):
+        _os = self.config['settings'].get('os', 'python')
+        if _os == 'auto': 
+            _os = system().lower()
+        if _os == 'linux':
+            self.FN = LinuxBase.FN
+            self.ScriptGenerator = LinuxScriptGenerator(self.config)
+            self.script_executor = LinuxBase.execute
+        elif _os == 'python':
+            self.FN = PythonBase.FN
+            self.ScriptGenerator = PythonScriptGenerator(self.config)
+            self.script_executor = PythonBase.execute
+        else:
+            raise Exception('Unsupported OS!')
+
     def prepare_script(self):
         '''Generate instructions for the backup script'''
         print('Preparing script...')
-        gen = ScriptGenerator(self.config)
-        self.instructions =  '\n'.join(gen.generate())
+        self.instructions =  '\n'.join(self.ScriptGenerator.generate())
     
     def show_output(self):
         '''Present generated script for confirmation.
@@ -97,7 +105,7 @@ class OpenBackup(SystemBase):
         '''Wrapper around the script executor'''
         print(f"Running script...")
         t0 = perf_counter()
-        super().execute()
+        self.script_executor(self.tempfile)
         print(f"Executed in {perf_counter()-t0:.2f} seconds")
 
 

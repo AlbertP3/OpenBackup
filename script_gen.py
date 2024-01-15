@@ -23,7 +23,7 @@ class AgnosticScriptGenerator(ABC):
 
 
 class LinuxScriptGenerator(AgnosticScriptGenerator):
-    '''Generate instructions for the bash script. It employs the tool (rsync, ...) 
+    '''Generate instructions for the bash script. It employs the tool (rsync, python) 
        to upload missing/modified files and a LinuxMonitor to track renamed/moved/deleted'''
 
     def __init__(self, config):
@@ -76,7 +76,7 @@ class LinuxScriptGenerator(AgnosticScriptGenerator):
             c = self.tool_fn(path)
             if path.get('require_closed'):
                 self.gen_require_closed(c, path)
-            else:
+            elif c:
                 self.out.append(c)
             self.batch_id+=1
         self.out.append('')
@@ -130,7 +130,7 @@ class LinuxScriptGenerator(AgnosticScriptGenerator):
             res = self.monitor.generate()
         elif self.config['settings']['tool'] == 'python':
             res = self.monitor.results if self.monitor.results_ready else self.monitor.generate()
-            res = [f"rm -rfv {self.parse_path(os.path.relpath(f['dst'], '.'))} | tee -a {self.config['settings']['rlogfilename']}" for f in self.monitor.generate() if f['action']=='remove']
+            res = [f"rm -rfv {self.parse_path(os.path.relpath(f['dst'], '.'))} | tee -a {self.config['settings']['rlogfilename']}" for f in res if f['action']=='remove']
         if res:
             self.out.extend(["# Apply changes (renamed/deleted/moved)", *res, ''])
 
@@ -144,3 +144,10 @@ class LinuxScriptGenerator(AgnosticScriptGenerator):
         ext = path['src'].split('.')[-1]
         comp = self.compression_options.get(ext, '')
         return f'''tar -x{comp}f {path['src']} -C {path['dst']} --strip-components=1 && echo "Extracted {ext} Archive {path['src']} To {path['dst']}" >> {self.logpath}'''
+
+
+
+class PythonScriptGenerator(AgnosticScriptGenerator):
+
+    def __init__(self, config):
+        self.config = config

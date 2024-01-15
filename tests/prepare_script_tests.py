@@ -84,8 +84,8 @@ class LinuxPrepareScriptPythonToolTests(TestCase, AgnosticBase):
     def setUp(self):
         super().setUp()
         self.config['settings']['tool'] = 'python'
-        self.rsync_generator = LinuxScriptGenerator(self.parse_config(self.config))
-        self.rsync_generator.out = list()
+        self.python_generator = LinuxScriptGenerator(self.parse_config(self.config))
+        self.python_generator.out = list()
 
     def tearDown(self):
         super().tearDown()
@@ -93,7 +93,7 @@ class LinuxPrepareScriptPythonToolTests(TestCase, AgnosticBase):
     @pytest.mark.compound
     def test_generate(self):
         '''Verify that method returns proper value'''
-        res = '\n'.join(self.rsync_generator.generate())
+        res = '\n'.join(self.python_generator.generate())
         self.assertIn(f"cp -rv {SWD}/data/src/dir1/a.txt tests/data/tgt/dir1/a.txt | tee -a some/pa\ th/test.log", res)
         self.assertEqual(res.count('cp -rv'), 8)
         self.assertEqual(res.count('rm -rfv'), 3)

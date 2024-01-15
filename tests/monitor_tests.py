@@ -6,14 +6,14 @@ import logging
 
 from unittest import TestCase
 from monitors import LinuxMonitor, PythonMonitor
-from base import LinuxBase
+from base import AgnosticBase
 from . import SWD, config, DDP
 
 logger = logging.getLogger('monitor_tests')
 
 
 
-class LinuxMonitorTests(TestCase, LinuxBase):
+class LinuxMonitorTests(TestCase, AgnosticBase):
     exp_log_path = r'some/pa\ th/test.log'
 
     def setUp(self):
@@ -124,14 +124,14 @@ class LinuxMonitorTests(TestCase, LinuxBase):
         '''Verify that main method works correctly'''
         res = self.monitor.generate()
         self.assertEqual(res, [
-            f'rm -rfv {DDP}/dir1/dir\ 4/r_i.ini | tee -a {self.exp_log_path}',
-            f'rm -rfv {DDP}/dir1/r_\ b.txt | tee -a {self.exp_log_path}',
+            rf'rm -rfv {DDP}/dir1/dir\ 4/r_i.ini | tee -a {self.exp_log_path}',
+            rf'rm -rfv {DDP}/dir1/r_\ b.txt | tee -a {self.exp_log_path}',
             f'rm -rfv {DDP}/dir1/r_dir5 | tee -a {self.exp_log_path}',
         ])
 
 
 
-class PythonMonitorTests(TestCase, LinuxBase):
+class PythonMonitorTests(TestCase, AgnosticBase):
 
     def setUp(self):
         super().setUp()

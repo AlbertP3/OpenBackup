@@ -21,6 +21,7 @@
     }
   ],
   "settings": {
+    "os": "auto",
     "tool": "rsync",
     "rmode": "truOvn",
     "rconfmode": "trOn",
@@ -32,6 +33,7 @@
       "post": ["echo 'Hello, world'"]
     },
     "mkdirs": ["./tests/data/tgt/dir1/conf", "tests/data/tgt/adj"],
-    "editor": ["nvim", "+1", "-c set filetype=sh", "${FILE}"]
+    "editor": ["nvim", "+1", "-c set filetype=sh", "${FILE}"],
+    "sync_precision": 0
   }
  }
