@@ -1,15 +1,17 @@
 import pytest
 from copy import deepcopy
 from unittest import TestCase
+import logging
 
 from . import SWD, config
 from script_gen import LinuxScriptGenerator
-from base import LinuxBase
+from base import AgnosticBase
 from tests.scenarios import EXP_GEN_RSYNC, EXP_PREPARE_SCRIPT_ACTIONS, EXP_GENERATE_PREPARE_SCRIPT
 
+logger = logging.getLogger('script_gen_test')
 
 
-class LinuxPrepareScriptTests(TestCase, LinuxBase):
+class LinuxPrepareScriptTests(TestCase, AgnosticBase):
     config = deepcopy(config)
     maxDiff = None
 
@@ -72,3 +74,26 @@ class LinuxPrepareScriptTests(TestCase, LinuxBase):
         '''Verify that method returns proper value'''
         res = self.rsync_generator.generate()
         self.assertEqual(res, EXP_GENERATE_PREPARE_SCRIPT)
+
+
+
+class LinuxPrepareScriptPythonToolTests(TestCase, AgnosticBase):
+    config = deepcopy(config)
+    maxDiff = None
+
+    def setUp(self):
+        super().setUp()
+        self.config['settings']['tool'] = 'python'
+        self.rsync_generator = LinuxScriptGenerator(self.parse_config(self.config))
+        self.rsync_generator.out = list()
+
+    def tearDown(self):
+        super().tearDown()
+
+    @pytest.mark.compound
+    def test_generate(self):
+        '''Verify that method returns proper value'''
+        res = '\n'.join(self.rsync_generator.generate())
+        self.assertIn(f"cp -rv {SWD}/data/src/dir1/a.txt tests/data/tgt/dir1/a.txt | tee -a some/pa\ th/test.log", res)
+        self.assertEqual(res.count('cp -rv'), 8)
+        self.assertEqual(res.count('rm -rfv'), 3)

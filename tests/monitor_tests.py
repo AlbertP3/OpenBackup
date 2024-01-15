@@ -2,16 +2,19 @@ import pytest
 import re
 import os
 from copy import deepcopy
+import logging
 
 from unittest import TestCase
-from monitors import LinuxMonitor
+from monitors import LinuxMonitor, PythonMonitor
 from base import LinuxBase
 from . import SWD, config, DDP
+
+logger = logging.getLogger('monitor_tests')
 
 
 
 class LinuxMonitorTests(TestCase, LinuxBase):
-    exp_log_path = 'some/pa\ th/test.log'
+    exp_log_path = r'some/pa\ th/test.log'
 
     def setUp(self):
         super().setUp()
@@ -125,3 +128,19 @@ class LinuxMonitorTests(TestCase, LinuxBase):
             f'rm -rfv {DDP}/dir1/r_\ b.txt | tee -a {self.exp_log_path}',
             f'rm -rfv {DDP}/dir1/r_dir5 | tee -a {self.exp_log_path}',
         ])
+
+
+
+class PythonMonitorTests(TestCase, LinuxBase):
+
+    def setUp(self):
+        super().setUp()
+        self.monitor = PythonMonitor(self.parse_config(deepcopy(config)))
+
+    def test_generate(self):
+        out = self.monitor.generate()
+        self.assertIn({'src': f'{SWD}/data/src/dir1/a.txt', 'dst': f'{DDP}/dir1/a.txt', 'action': 'update', 'batch_id':0}, out)
+        self.assertIn({'src': f'{SWD}/data/src/dir1/b.txt', 'dst': f'{DDP}/dir1/b.txt', 'action': 'copy', 'batch_id':0}, out)
+        self.assertIn({'src': f'{SWD}/data/src/h.go', 'dst': f'tests/data/tgt/dir1/conf/h.go', 'action': 'update', 'batch_id':2}, out)
+        self.assertIn({'src': None, 'dst': f'{DDP}/dir1/r_ b.txt', 'action': 'remove', 'batch_id':0}, out)
+        

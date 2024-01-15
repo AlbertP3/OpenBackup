@@ -8,6 +8,7 @@ from platform import node, system
 from base import *
 from script_gen import *
 
+# TODO
 if system() == 'Linux':
     SystemBase = LinuxBase
     ScriptGenerator = LinuxScriptGenerator

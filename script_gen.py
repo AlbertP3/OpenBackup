@@ -1,11 +1,14 @@
 import os
+import re
 from abc import ABC, abstractmethod
 
-from monitors import LinuxMonitor
+from monitors import LinuxMonitor, PythonMonitor
 
 
 
 class AgnosticScriptGenerator(ABC):
+
+    re_space = re.compile(r'(?<!\\) ')
 
     @abstractmethod
     def generate(self) -> list:
@@ -16,11 +19,6 @@ class AgnosticScriptGenerator(ABC):
         '''Replace special tags with corresponding variables'''
         cmd = cmd.replace(r'${LOG_PATH}', self.logpath)
         return cmd
-    
-    def get_sync_python(self) -> list:
-        '''Return list of newer files from the source'''
-        # TODO
-        ...
 
 
 
@@ -30,16 +28,22 @@ class LinuxScriptGenerator(AgnosticScriptGenerator):
 
     def __init__(self, config):
         self.config = config
+        self.batch_id = 0
         self.logpath = self.config['settings']['rlogfilename']
         self.compression_options = {'tar': '', 'bz2': 'j', 'gzip': 'z'}
         self.tool_fn = {
             'rsync': self.gen_rsync,
             'python': self.gen_python,
         }[self.config['settings']['tool']]
+        self.monitor = {
+            'rsync': LinuxMonitor,
+            'python': PythonMonitor,
+        }[self.config['settings']['tool']](self.config)
     
     def generate(self) -> list:
         '''Create a list of all operations - foundament of the bash script'''
         self.out:list = list()
+        self.batch_id = 0
         self.gen_header()
         self.gen_logging()
         self.gen_mkdirs()
@@ -74,6 +78,7 @@ class LinuxScriptGenerator(AgnosticScriptGenerator):
                 self.gen_require_closed(c, path)
             else:
                 self.out.append(c)
+            self.batch_id+=1
         self.out.append('')
 
     def gen_rsync(self, path:dict) -> str:
@@ -82,11 +87,18 @@ class LinuxScriptGenerator(AgnosticScriptGenerator):
         return f"""rsync -{mode} {path['src']} {path['dst']} $log {exclusions}"""
     
     def gen_python(self, path:dict) -> str:
-        # TODO
-        return """"""
+        res = self.monitor.results if self.monitor.results_ready else self.monitor.generate()
+        log = f"tee -a {self.config['settings']['rlogfilename']}"
+        out = [
+            f"cp -rv {self.parse_path(p['src'])} {self.parse_path(os.path.relpath(p['dst'], '.'))} | {log}" 
+                for p in res 
+                if p['action'] in {'copy', 'update'} and
+                p['batch_id'] == self.batch_id
+            ]
+        return '\n'.join(out) 
         
     def parse_path(self, path:str) -> str:
-        return os.path.normpath(self.re_space.sub('\ ', path))
+        return os.path.normpath(self.re_space.sub(r'\ ', path))
     
     def gen_cmds(self, which:str):
         '''Generate which:(pre,post) commands if available'''
@@ -114,10 +126,14 @@ class LinuxScriptGenerator(AgnosticScriptGenerator):
             self.out.extend(['# Create directories', *[f"mkdir -p {f}" for f in make_nodes], ''])
 
     def gen_monitor_actions(self):
-        monitor = LinuxMonitor(self.config)
-        if res:=monitor.generate():
+        if self.config['settings']['tool'] == 'rsync':
+            res = self.monitor.generate()
+        elif self.config['settings']['tool'] == 'python':
+            res = self.monitor.results if self.monitor.results_ready else self.monitor.generate()
+            res = [f"rm -rfv {self.parse_path(os.path.relpath(f['dst'], '.'))} | tee -a {self.config['settings']['rlogfilename']}" for f in self.monitor.generate() if f['action']=='remove']
+        if res:
             self.out.extend(["# Apply changes (renamed/deleted/moved)", *res, ''])
-        
+
     def get_archive_cmd(self, path) -> str:
         ext = path['dst'].split('.')[-1]
         comp = self.compression_options.get(ext, '')
