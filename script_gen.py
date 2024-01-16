@@ -9,6 +9,10 @@ from monitors import LinuxMonitor, PythonMonitor
 class AgnosticScriptGenerator(ABC):
 
     re_space = re.compile(r'(?<!\\) ')
+    MONITORS = {
+        'rsync': LinuxMonitor,
+        'python': PythonMonitor,
+    }
 
     @abstractmethod
     def generate(self) -> list:
@@ -28,22 +32,17 @@ class LinuxScriptGenerator(AgnosticScriptGenerator):
 
     def __init__(self, config):
         self.config = config
-        self.batch_id = 0
         self.logpath = self.config['settings']['rlogfilename']
         self.compression_options = {'tar': '', 'bz2': 'j', 'gzip': 'z'}
         self.tool_fn = {
             'rsync': self.gen_rsync,
             'python': self.gen_python,
         }[self.config['settings']['tool']]
-        self.monitor = {
-            'rsync': LinuxMonitor,
-            'python': PythonMonitor,
-        }[self.config['settings']['tool']](self.config)
+        self.monitor = self.MONITORS[self.config['settings']['tool']](self.config)
     
     def generate(self) -> list:
         '''Create a list of all operations - foundament of the bash script'''
         self.out:list = list()
-        self.batch_id = 0
         self.gen_header()
         self.gen_logging()
         self.gen_mkdirs()
@@ -78,7 +77,6 @@ class LinuxScriptGenerator(AgnosticScriptGenerator):
                 self.gen_require_closed(c, path)
             elif c:
                 self.out.append(c)
-            self.batch_id+=1
         self.out.append('')
 
     def gen_rsync(self, path:dict) -> str:
@@ -93,7 +91,7 @@ class LinuxScriptGenerator(AgnosticScriptGenerator):
             f"cp -rv {self.parse_path(p['src'])} {self.parse_path(os.path.relpath(p['dst'], '.'))} | {log}" 
                 for p in res 
                 if p['action'] in {'copy', 'update'} and
-                p['batch_id'] == self.batch_id
+                p['batch_id'] == path['batch_id']
             ]
         return '\n'.join(out) 
         
@@ -129,7 +127,7 @@ class LinuxScriptGenerator(AgnosticScriptGenerator):
         if self.config['settings']['tool'] == 'rsync':
             res = self.monitor.generate()
         elif self.config['settings']['tool'] == 'python':
-            res = self.monitor.results if self.monitor.results_ready else self.monitor.generate()
+            res = self.monitor.generate(use_cache=True)
             res = [f"rm -rfv {self.parse_path(os.path.relpath(f['dst'], '.'))} | tee -a {self.config['settings']['rlogfilename']}" for f in res if f['action']=='remove']
         if res:
             self.out.extend(["# Apply changes (renamed/deleted/moved)", *res, ''])
@@ -148,6 +146,127 @@ class LinuxScriptGenerator(AgnosticScriptGenerator):
 
 
 class PythonScriptGenerator(AgnosticScriptGenerator):
+    '''[WIP] Generate instructions for the .py script. Uses the PythonMonitor
+       to upload missing/modified and to track renamed/moved/deleted files and dirs.
+       It is a simplified generator, missing the following functionalities: 
+            require_closed, gen/ext archive, pre/post commands
+    '''
 
     def __init__(self, config):
         self.config = config
+        self.monitor = self.MONITORS['python'](self.config)
+
+    def generate(self) -> list:
+        out = list()
+        out.extend(self.gen_headers())
+        out.extend(self.gen_mkdirs())
+        # out.extend(self.gen_pre_cmds())
+        out.extend(self.gen_rms())
+        out.extend(self.gen_cps())
+        # out.extend(self.gen_archs())
+        # out.extend(self.gen_post_cmds())
+        return out
+
+    def gen_headers(self) -> list:
+        return [
+            'import logging, psutil, shutil, os',
+            '',
+            '# Setup logging', 
+            "try:",
+                f"\tos.remove('{self.config['settings']['rlogfilename']}')",
+            "except FileNotFoundError:",
+                "\tpass",
+            "logging.basicConfig(",
+                f"\tfilename=os.path.realpath('{self.config['settings']['rlogfilename']}'),",
+                "\tfilemode='a',",
+                "\tformat='%(asctime)s.%(msecs)05d | %(message)s',",
+                "\tdatefmt='%H:%M:%S', ",
+                "\tlevel='DEBUG'",
+            ")",
+            'logger = logging.getLogger("OpenBackup")',
+            '',
+            '# Declare functions',
+            "def rm(dst):",
+                "\tos.remove(dst)",
+                "\tlogger.info(f'Removed file {dst}')",
+            "def rmdir(dst):",
+                "\tshutil.rmtree(dst)",
+                "\tlogger.info(f'Removed directory {dst}')",
+            "def cp(src, dst):",
+                "\tshutil.copy2(src, dst)",
+                "\tlogger.info(f'Copied file to {dst}')",
+            "def cpdir(src, dst, ignore=None):",
+                "\tshutil.copytree(src, dst, ignore=ignore)",
+                "\tlogger.info(f'Copied directory to {dst}')",
+            ''
+        ]
+
+    def gen_mkdirs(self) -> list:
+        return [
+            '# Create directories',
+            *[f"if not os.path.exists('{p}'):\n\tos.mkdir('{p}')\n\tlogger.info(f'Created directory {p}')" 
+              for p in self.config['settings']['mkdirs']],
+            ''
+        ] if self.config['settings']['mkdirs'] else []
+    
+    def gen_pre_cmds(self) -> list:
+        return [
+            '# Pre Commands',
+            *self.config['settings']['cmd']['pre'],
+            ''
+        ] if self.config['settings']['cmd']['pre'] else []
+    
+    def gen_post_cmds(self) -> list:
+        return [
+            '# Post Commands',
+            *self.config['settings']['cmd']['post'],
+            ''
+        ] if self.config['settings']['cmd']['post'] else []
+    
+    def gen_rms(self) -> list:
+        out = list()
+        res = self.monitor.generate(use_cache=True)
+        mxdstlen = max(len(path['dst']) for path in res)
+        for path in res:
+            if path['action'] not in {'remove'}:
+                continue
+            elif os.path.isfile(path['dst']):
+                out.append(f"rm('{path['dst']}'{' '*(mxdstlen-len(path['dst']))})")
+            else:
+                out.append(f"rmdir('{path['dst']}'{' '*(mxdstlen-len(path['dst'])-3)})")
+        return [
+            "# Apply changes (renamed/deleted/moved)",
+            *sorted(out),
+            ''
+        ]
+
+    def gen_cps(self) -> list:
+        out = list()
+        res = self.monitor.generate(use_cache=True)
+        batch_map_exclude = {p['batch_id']: p.get('exclude') for p in self.config['paths']}
+        mxsrclen = max(len(path['src']) for path in res if path['action'] in {'copy', 'update'})
+        mxdstlen = max(len(path['dst']) for path in res if path['action'] in {'copy', 'update'})
+        for path in res:
+            if path['action'] not in {'copy', 'update'}:
+                continue
+            elif os.path.isfile(path['src']):
+                out.append(
+                    f"cp('{path['src']}'{' '*(mxsrclen-len(path['src']))}, '{path['dst']}'{' '*(mxdstlen-len(path['dst']))})"
+                )
+            else:
+                p1 = f"cpdir('{path['src']}'{' '*(mxsrclen-len(path['src'])-3)}, '{path['dst']}'{' '*(mxdstlen-len(path['dst']))}"
+                excl = batch_map_exclude[path['batch_id']]
+                p2 = f''', ignore=shutil.ignore_patterns('{"', '".join(excl)}'))''' if excl else ')'
+                out.append(p1+p2)
+        return [
+            "# Sync files",
+            *sorted(out),
+            ''
+        ]
+
+    def gen_archs(self) -> list:
+        return [
+            '# Gen/Ext Archives',
+            '# ...',
+            ''
+        ]

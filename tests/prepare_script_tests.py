@@ -4,7 +4,7 @@ from unittest import TestCase
 import logging
 
 from . import SWD, config
-from script_gen import LinuxScriptGenerator
+from script_gen import LinuxScriptGenerator, PythonScriptGenerator
 from base import AgnosticBase
 from tests.scenarios import EXP_GEN_RSYNC, EXP_PREPARE_SCRIPT_ACTIONS, EXP_GENERATE_PREPARE_SCRIPT
 
@@ -39,11 +39,11 @@ class LinuxPrepareScriptTests(TestCase, AgnosticBase):
         '''Verify that method returns proper value'''
         res = self.rsync_generator.get_archive_cmd({'dst': './dir/folder/arch.tar', 
                                                     'src': '/x/y/file'})
-        self.assertEqual(res, '''tar -cf ./dir/folder/arch.tar /x/y/file && echo "Created tar Archive ./dir/folder/arch.tar From /x/y/file" >> some/pa\ th/test.log''')
+        self.assertEqual(res, r'''tar -cf ./dir/folder/arch.tar /x/y/file && echo "Created tar Archive ./dir/folder/arch.tar From /x/y/file" >> some/pa\ th/test.log''')
         res = self.rsync_generator.get_archive_cmd({'dst': './dir/folder/arch.tar', 
                                                     'src': '/x/y/file',
                                                     'exclude': ["*/__.*"]})
-        self.assertEqual(res, '''tar -cf ./dir/folder/arch.tar /x/y/file --exclude={*/__.*} && echo "Created tar Archive ./dir/folder/arch.tar From /x/y/file" >> some/pa\ th/test.log''')
+        self.assertEqual(res, r'''tar -cf ./dir/folder/arch.tar /x/y/file --exclude={*/__.*} && echo "Created tar Archive ./dir/folder/arch.tar From /x/y/file" >> some/pa\ th/test.log''')
     
     def test_gen_post_cmds(self):
         '''Verify that method returns proper value'''
@@ -94,6 +94,27 @@ class LinuxPrepareScriptPythonToolTests(TestCase, AgnosticBase):
     def test_generate(self):
         '''Verify that method returns proper value'''
         res = '\n'.join(self.python_generator.generate())
-        self.assertIn(f"cp -rv {SWD}/data/src/dir1/a.txt tests/data/tgt/dir1/a.txt | tee -a some/pa\ th/test.log", res)
-        self.assertEqual(res.count('cp -rv'), 8)
+        self.assertIn(rf"cp -rv {SWD}/data/src/dir1/a.txt tests/data/tgt/dir1/a.txt | tee -a some/pa\ th/test.log", res)
+        self.assertEqual(res.count('cp -rv'), 9)
         self.assertEqual(res.count('rm -rfv'), 3)
+
+
+
+class PythonPrepareScriptTests(TestCase, AgnosticBase):
+
+    config = deepcopy(config)
+    maxDiff = None
+
+    def setUp(self):
+        super().setUp()
+        self.config['settings']['tool'] = 'python'
+        self.config['settings']['os'] = 'python'
+        self.python_generator = PythonScriptGenerator(self.parse_config(self.config))
+
+    def tearDown(self):
+        super().tearDown()
+
+    @pytest.mark.compound
+    def test_generate(self):
+        res = '\n'.join(self.python_generator.generate())
+        logger.debug(res)

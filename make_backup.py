@@ -55,6 +55,7 @@ class OpenBackup(AgnosticBase):
         _os = self.config['settings'].get('os', 'python')
         if _os == 'auto': 
             _os = system().lower()
+            _os = _os if _os in {'linux',} else 'python'
         if _os == 'linux':
             self.FN = LinuxBase.FN
             self.ScriptGenerator = LinuxScriptGenerator(self.config)

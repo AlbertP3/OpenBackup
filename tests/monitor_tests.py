@@ -141,6 +141,6 @@ class PythonMonitorTests(TestCase, AgnosticBase):
         out = self.monitor.generate()
         self.assertIn({'src': f'{SWD}/data/src/dir1/a.txt', 'dst': f'{DDP}/dir1/a.txt', 'action': 'update', 'batch_id':0}, out)
         self.assertIn({'src': f'{SWD}/data/src/dir1/b.txt', 'dst': f'{DDP}/dir1/b.txt', 'action': 'copy', 'batch_id':0}, out)
-        self.assertIn({'src': f'{SWD}/data/src/h.go', 'dst': f'tests/data/tgt/dir1/conf/h.go', 'action': 'update', 'batch_id':2}, out)
+        self.assertIn({'src': f'{SWD}/data/src/h.go', 'dst': f'tests/data/tgt/dir1/conf/h.go', 'action': 'update', 'batch_id':3}, out)
         self.assertIn({'src': None, 'dst': f'{DDP}/dir1/r_ b.txt', 'action': 'remove', 'batch_id':0}, out)
         

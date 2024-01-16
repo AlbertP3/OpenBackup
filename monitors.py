@@ -133,21 +133,20 @@ class PythonMonitor(AgnosticMonitor):
         self.results_ready = False
         self.sync_prec = self.config['settings'].get('sync_precision', 1)
 
-    def generate(self) -> list[dict[str, str, str]]:
+    def generate(self, use_cache=False) -> list[dict[str, str, str]]:
         '''Returns list of dicts [{src, dst, action, batch_id}].
            Marks files for: copy, update, delete.
            Does NOT include os-specific instructions'''
+        if use_cache and self.results_ready:
+            return self.results
         self.results_ready = False
         self._files_seen = 0
         self._files_scanned = 0
-        self.batch_id = 0
         self.results = list()
         t0 = perf_counter()
         for path in self.get_expanded_paths(self.config['paths']):
-            if any(k in path.keys() for k in {'archive', 'extract'}):
-                continue
-            self.results.extend(self.get_sync(path))
-            self.batch_id+=1
+            if not any(k in path.keys() for k in {'archive', 'extract'}):
+                self.results.extend(self.get_sync(path))
         self.results = self.filtered_sync(self.results)
         self.results.extend(self.get_diff())
         self.results_ready = True
@@ -156,7 +155,7 @@ class PythonMonitor(AgnosticMonitor):
 
     def get_sync(self, path:dict) -> list:
         if path.get('isconf', False):
-            return [{'src': path['src'], 'dst':path['dst'], 'action': self.actions.cp, 'batch_id': self.batch_id}]
+            return [{'src': path['src'], 'dst':path['dst'], 'action': self.actions.cp, 'batch_id': path['batch_id']}]
         out = list()
         lcompi = path['src'].rfind('/')+1
         excl = self.parse_rsync_exclude(path.get('exclude'))
@@ -167,11 +166,11 @@ class PythonMonitor(AgnosticMonitor):
                 # st_mtime precision may vary. Adding <sync_prec> seconds for practical reasons
                 if os.stat(srcpath).st_mtime > os.stat(dstpath).st_mtime + self.sync_prec:
                     if os.path.isfile(srcpath):
-                        out.append({'src': srcpath, 'dst': dstpath, 'action': self.actions.up,'batch_id': self.batch_id})
+                        out.append({'src': srcpath, 'dst': dstpath, 'action': self.actions.up,'batch_id': path['batch_id']})
                     else:
                         continue
             except FileNotFoundError:
-                out.append({'src': srcpath, 'dst': dstpath, 'action': self.actions.cp, 'batch_id': self.batch_id})
+                out.append({'src': srcpath, 'dst': dstpath, 'action': self.actions.cp, 'batch_id': path['batch_id']})
         self._files_seen+=len(src_tree)
         return out
 

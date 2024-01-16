@@ -18,12 +18,15 @@ class AgnosticBase(ABC):
         config['settings']['defaultdst'] = self.parse_path(config['settings'].get('defaultdst', '.'))
         for i, v in enumerate(config['settings'].setdefault('mkdirs', [])):
             config['settings']['mkdirs'][i] = self.parse_path(v)
+        batch_id = 0
         for i, v in enumerate(config['paths']):
+            config['paths'][i]['batch_id'] = batch_id
             config['paths'][i]['src'] = self.parse_path(v['src'])
             try:
                 config['paths'][i]['dst'] = self.parse_path(v['dst'])
             except KeyError:
                 config['paths'][i]['dst'] = config['settings']['defaultdst']
+            batch_id += 1
         return config
 
 
