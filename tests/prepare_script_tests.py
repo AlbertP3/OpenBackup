@@ -8,7 +8,7 @@ from script_gen import LinuxScriptGenerator, PythonScriptGenerator
 from base import AgnosticBase
 from tests.scenarios import EXP_GEN_RSYNC, EXP_PREPARE_SCRIPT_ACTIONS, EXP_GENERATE_PREPARE_SCRIPT
 
-logger = logging.getLogger('script_gen_test')
+log = logging.getLogger('script_gen_test')
 
 
 class LinuxPrepareScriptTests(TestCase, AgnosticBase):
@@ -43,7 +43,7 @@ class LinuxPrepareScriptTests(TestCase, AgnosticBase):
         res = self.rsync_generator.get_archive_cmd({'dst': './dir/folder/arch.tar', 
                                                     'src': '/x/y/file',
                                                     'exclude': ["*/__.*"]})
-        self.assertEqual(res, r'''tar -cf ./dir/folder/arch.tar /x/y/file --exclude={*/__.*} && echo "Created tar Archive ./dir/folder/arch.tar From /x/y/file" >> some/pa\ th/test.log''')
+        self.assertEqual(res, r'''tar -cf ./dir/folder/arch.tar /x/y/file --exclude=*/__.* && echo "Created tar Archive ./dir/folder/arch.tar From /x/y/file" >> some/pa\ th/test.log''')
     
     def test_gen_post_cmds(self):
         '''Verify that method returns proper value'''
@@ -77,44 +77,52 @@ class LinuxPrepareScriptTests(TestCase, AgnosticBase):
 
 
 
-class LinuxPrepareScriptPythonToolTests(TestCase, AgnosticBase):
-    config = deepcopy(config)
-    maxDiff = None
-
-    def setUp(self):
-        super().setUp()
-        self.config['settings']['tool'] = 'python'
-        self.python_generator = LinuxScriptGenerator(self.parse_config(self.config))
-        self.python_generator.out = list()
-
-    def tearDown(self):
-        super().tearDown()
-
-    @pytest.mark.compound
-    def test_generate(self):
-        '''Verify that method returns proper value'''
-        res = '\n'.join(self.python_generator.generate())
-        self.assertIn(rf"cp -rv {SWD}/data/src/dir1/a.txt tests/data/tgt/dir1/a.txt | tee -a some/pa\ th/test.log", res)
-        self.assertEqual(res.count('cp -rv'), 9)
-        self.assertEqual(res.count('rm -rfv'), 3)
-
-
-
 class PythonPrepareScriptTests(TestCase, AgnosticBase):
 
     config = deepcopy(config)
+    config['settings']['os'] = 'python'
     maxDiff = None
 
     def setUp(self):
         super().setUp()
-        self.config['settings']['tool'] = 'python'
-        self.config['settings']['os'] = 'python'
         self.python_generator = PythonScriptGenerator(self.parse_config(self.config))
 
     def tearDown(self):
         super().tearDown()
 
-    @pytest.mark.compound
     def test_generate(self):
         res = '\n'.join(self.python_generator.generate())
-        logger.debug(res)
+        log.debug(res)
+    
+    def test_gen_rms(self):
+        '''Check if correct objects are marked for removal'''
+        self.assertListEqual(
+            self.python_generator.gen_rms(), 
+            [   
+                '# Apply changes (renamed/deleted/moved)',
+                f"rm('{SWD}/data/tgt/dir1/dir 4/r_i.ini')", 
+                f"rm('{SWD}/data/tgt/dir1/r_ b.txt'     )",
+                f"rmdir('{SWD}/data/tgt/dir1/r_dir5'    )",
+                ''
+            ]
+        )
+    
+    def test_gen_cps(self):
+        '''Check if correct objects are marked for copy'''
+        n = "\n"
+        self.assertListEqual(
+            self.python_generator.gen_cps(),
+            [
+                "# Sync files",
+                f"cp({n}\t'{SWD}/data/src/dir1/a.txt',{n}\t'{SWD}/data/tgt/dir1/a.txt'{n})",
+                f"cp({n}\t'{SWD}/data/src/dir1/b.txt',{n}\t'{SWD}/data/tgt/dir1/b.txt'{n})",
+                f"cp({n}\t'{SWD}/data/src/dir1/dir 4/h.html',{n}\t'{SWD}/data/tgt/dir1/dir 4/h.html'{n})",
+                f"cp({n}\t'{SWD}/data/src/dir1/dir 4/i.ini',{n}\t'{SWD}/data/tgt/dir1/dir 4/i.ini'{n})",
+                f"cp({n}\t'{SWD}/data/src/dir1/dir2/c.csv',{n}\t'{SWD}/data/tgt/dir1/dir2/c.csv'{n})",
+                f"cp({n}\t'{SWD}/data/src/dir1/dir2/d.cpp',{n}\t'{SWD}/data/tgt/dir1/dir2/d.cpp'{n})",
+                f"cp({n}\t'{SWD}/data/src/g.xml',{n}\t'{SWD}/data/tgt/g.xml'{n})",
+                f"cp({n}\t'{SWD}/data/src/h.go',{n}\t'tests/data/tgt/dir1/conf/h.go'{n})",
+                f"cpdir({n}\t'{SWD}/data/src/dir1/dir5',{n}\t'{SWD}/data/tgt/dir1/dir5',{n}\tignore=shutil.ignore_patterns('*/venv*', '*/__.*',){n})",
+                ""
+            ]
+        )

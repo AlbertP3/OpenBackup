@@ -9,10 +9,7 @@ from monitors import LinuxMonitor, PythonMonitor
 class AgnosticScriptGenerator(ABC):
 
     re_space = re.compile(r'(?<!\\) ')
-    MONITORS = {
-        'rsync': LinuxMonitor,
-        'python': PythonMonitor,
-    }
+    newline = "\n"
 
     @abstractmethod
     def generate(self) -> list:
@@ -27,18 +24,14 @@ class AgnosticScriptGenerator(ABC):
 
 
 class LinuxScriptGenerator(AgnosticScriptGenerator):
-    '''Generate instructions for the bash script. It employs the tool (rsync, python) 
+    '''Generate instructions for the bash script. It employs the rsync 
        to upload missing/modified files and a LinuxMonitor to track renamed/moved/deleted'''
 
     def __init__(self, config):
         self.config = config
         self.logpath = self.config['settings']['rlogfilename']
         self.compression_options = {'tar': '', 'bz2': 'j', 'gzip': 'z'}
-        self.tool_fn = {
-            'rsync': self.gen_rsync,
-            'python': self.gen_python,
-        }[self.config['settings']['tool']]
-        self.monitor = self.MONITORS[self.config['settings']['tool']](self.config)
+        self.monitor = LinuxMonitor(self.config)
     
     def generate(self) -> list:
         '''Create a list of all operations - foundament of the bash script'''
@@ -72,7 +65,7 @@ class LinuxScriptGenerator(AgnosticScriptGenerator):
                     self.out.append(self.get_archive_cmd(path))
                 elif path.get('extract'):
                     self.out.append(self.get_extract_cmd(path))
-            c = self.tool_fn(path)
+            c = self.gen_rsync(path)
             if path.get('require_closed'):
                 self.gen_require_closed(c, path)
             elif c:
@@ -81,20 +74,8 @@ class LinuxScriptGenerator(AgnosticScriptGenerator):
 
     def gen_rsync(self, path:dict) -> str:
         mode = self.config['settings']['rconfmode'] if path.get('isconf') else self.config['settings']['rmode']
-        exclusions = "--exclude={"+','.join(path['exclude'])+"}" if path.get('exclude') else ''
-        return f"""rsync -{mode} {path['src']} {path['dst']} $log {exclusions}"""
+        return f"""rsync -{mode} {path['src']} {path['dst']} $log{self.fmt_excl(path)}"""
     
-    def gen_python(self, path:dict) -> str:
-        res = self.monitor.results if self.monitor.results_ready else self.monitor.generate()
-        log = f"tee -a {self.config['settings']['rlogfilename']}"
-        out = [
-            f"cp -rv {self.parse_path(p['src'])} {self.parse_path(os.path.relpath(p['dst'], '.'))} | {log}" 
-                for p in res 
-                if p['action'] in {'copy', 'update'} and
-                p['batch_id'] == path['batch_id']
-            ]
-        return '\n'.join(out) 
-        
     def parse_path(self, path:str) -> str:
         return os.path.normpath(self.re_space.sub(r'\ ', path))
     
@@ -124,24 +105,29 @@ class LinuxScriptGenerator(AgnosticScriptGenerator):
             self.out.extend(['# Create directories', *[f"mkdir -p {f}" for f in make_nodes], ''])
 
     def gen_monitor_actions(self):
-        if self.config['settings']['tool'] == 'rsync':
-            res = self.monitor.generate()
-        elif self.config['settings']['tool'] == 'python':
-            res = self.monitor.generate(use_cache=True)
-            res = [f"rm -rfv {self.parse_path(os.path.relpath(f['dst'], '.'))} | tee -a {self.config['settings']['rlogfilename']}" for f in res if f['action']=='remove']
-        if res:
+        if res := self.monitor.generate():
             self.out.extend(["# Apply changes (renamed/deleted/moved)", *res, ''])
 
     def get_archive_cmd(self, path) -> str:
         ext = path['dst'].split('.')[-1]
         comp = self.compression_options.get(ext, '')
-        excl = " --exclude={"+','.join(path['exclude'])+"}" if path.get('exclude') else ''
-        return f'''tar -c{comp}f {path['dst']} {path['src']}{excl} && echo "Created {ext} Archive {path['dst']} From {path['src']}" >> {self.logpath}'''
+        return f'''tar -c{comp}f {path['dst']} {path['src']}{self.fmt_excl(path)} && echo "Created {ext} Archive {path['dst']} From {path['src']}" >> {self.logpath}'''
 
     def get_extract_cmd(self, path) -> str:
         ext = path['src'].split('.')[-1]
         comp = self.compression_options.get(ext, '')
         return f'''tar -x{comp}f {path['src']} -C {path['dst']} --strip-components=1 && echo "Extracted {ext} Archive {path['src']} To {path['dst']}" >> {self.logpath}'''
+
+    def fmt_excl(self, path:dict) -> str:
+        '''Parse exluded patterns for rsync --exclude'''
+        try:
+            prefix =  " --exclude="
+            if len(path['exclude']) == 1:
+                return prefix + path['exclude'][0]
+            else:
+                return prefix + "{" + ','.join(path['exclude']) + "}"
+        except KeyError:
+            return ""
 
 
 
@@ -154,7 +140,7 @@ class PythonScriptGenerator(AgnosticScriptGenerator):
 
     def __init__(self, config):
         self.config = config
-        self.monitor = self.MONITORS['python'](self.config)
+        self.monitor = PythonMonitor(self.config)
 
     def generate(self) -> list:
         out = list()
@@ -169,7 +155,7 @@ class PythonScriptGenerator(AgnosticScriptGenerator):
 
     def gen_headers(self) -> list:
         return [
-            'import logging, psutil, shutil, os',
+            'import logging, shutil, os',
             '',
             '# Setup logging', 
             "try:",
@@ -183,31 +169,35 @@ class PythonScriptGenerator(AgnosticScriptGenerator):
                 "\tdatefmt='%H:%M:%S', ",
                 "\tlevel='DEBUG'",
             ")",
-            'logger = logging.getLogger("OpenBackup")',
+            'log = logging.getLogger("OpenBackup")',
             '',
             '# Declare functions',
             "def rm(dst):",
                 "\tos.remove(dst)",
-                "\tlogger.info(f'Removed file {dst}')",
+                "\log.info(f'Removed file {dst}')",
             "def rmdir(dst):",
                 "\tshutil.rmtree(dst)",
-                "\tlogger.info(f'Removed directory {dst}')",
+                "\log.info(f'Removed directory {dst}')",
             "def cp(src, dst):",
                 "\tshutil.copy2(src, dst)",
-                "\tlogger.info(f'Copied file to {dst}')",
+                "\log.info(f'Copied file to {dst}')",
             "def cpdir(src, dst, ignore=None):",
                 "\tshutil.copytree(src, dst, ignore=ignore)",
-                "\tlogger.info(f'Copied directory to {dst}')",
+                "\log.info(f'Copied directory to {dst}')",
             ''
         ]
 
     def gen_mkdirs(self) -> list:
+        mkdirs = [
+            f"os.mkdir('{p}')\nlog.info(f'Created directory {p}')" 
+            for p in self.config['settings']['mkdirs']
+            if not os.path.exists(p)
+        ]
         return [
             '# Create directories',
-            *[f"if not os.path.exists('{p}'):\n\tos.mkdir('{p}')\n\tlogger.info(f'Created directory {p}')" 
-              for p in self.config['settings']['mkdirs']],
+            *mkdirs,
             ''
-        ] if self.config['settings']['mkdirs'] else []
+        ] if mkdirs else []
     
     def gen_pre_cmds(self) -> list:
         return [
@@ -244,19 +234,17 @@ class PythonScriptGenerator(AgnosticScriptGenerator):
         out = list()
         res = self.monitor.generate(use_cache=True)
         batch_map_exclude = {p['batch_id']: p.get('exclude') for p in self.config['paths']}
-        mxsrclen = max(len(path['src']) for path in res if path['action'] in {'copy', 'update'})
-        mxdstlen = max(len(path['dst']) for path in res if path['action'] in {'copy', 'update'})
         for path in res:
             if path['action'] not in {'copy', 'update'}:
                 continue
             elif os.path.isfile(path['src']):
                 out.append(
-                    f"cp('{path['src']}'{' '*(mxsrclen-len(path['src']))}, '{path['dst']}'{' '*(mxdstlen-len(path['dst']))})"
+                    f"cp({self.newline}\t'{path['src']}',{self.newline}\t'{path['dst']}'{self.newline})"
                 )
             else:
-                p1 = f"cpdir('{path['src']}'{' '*(mxsrclen-len(path['src'])-3)}, '{path['dst']}'{' '*(mxdstlen-len(path['dst']))}"
+                p1 = f"cpdir({self.newline}\t'{path['src']}',{self.newline}\t'{path['dst']}'"
                 excl = batch_map_exclude[path['batch_id']]
-                p2 = f''', ignore=shutil.ignore_patterns('{"', '".join(excl)}'))''' if excl else ')'
+                p2 = f''',{self.newline}\tignore=shutil.ignore_patterns('{"', '".join(excl)}',){self.newline})''' if excl else '\n)'
                 out.append(p1+p2)
         return [
             "# Sync files",

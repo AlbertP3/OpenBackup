@@ -93,7 +93,10 @@ class OpenBackup(AgnosticBase):
     def gen_temp_file(self):
         '''Creates an uniquely named file with the backup instructions.
            It is deleted after self.generate() ends'''
-        self.tempfile = f"{str(uuid4())}.{self.FN.exe}"
+        name = f"{self.config['settings'].get('name', 'job')}-{str(uuid4())[:8]}"
+        while f"{name}.{self.FN.exe}" in os.listdir('.'):
+            name += f"-{str(uuid4())[:8]}"
+        self.tempfile = f"{name}.{self.FN.exe}"
         open(self.tempfile, 'w').write(self.instructions)
 
     def parse_editor_command(self, cmd:list) -> list:

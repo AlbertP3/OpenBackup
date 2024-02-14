@@ -46,10 +46,10 @@ EXP_GEN_RSYNC = [
     'if pgrep some_pid; then',
     '  echo "ERROR some_pid must be closed in order to backup the configuration" >> some/pa\\ th/test.log',
     'else',
-    f'  tar -cf dir1/arch.tar {SWD}/data/src/dir6 --exclude='+'{*/__.*} && echo "Created tar Archive dir1/arch.tar From '+f'{SWD}/data/src/dir6" >> some/pa\\ th/test.log',
+    f'  tar -cf dir1/arch.tar {SWD}/data/src/dir6 --exclude='+'*/__.* && echo "Created tar Archive dir1/arch.tar From '+f'{SWD}/data/src/dir6" >> some/pa\\ th/test.log',
     'fi',
-    f'rsync -truOvn {SWD}/data/src/g.xml {DDP} $log ',
-    f'rsync -truOvn {SWD}/data/src/'+'{h.go,l.doc} tests/data/tgt/dir1/conf $log ',
+    f'rsync -truOvn {SWD}/data/src/g.xml {DDP} $log',
+    f'rsync -truOvn {SWD}/data/src/'+'{h.go,l.doc} tests/data/tgt/dir1/conf $log',
     ''
 ]
 
@@ -88,10 +88,10 @@ EXP_GENERATE_PREPARE_SCRIPT = [
     'if pgrep some_pid; then',
     '  echo "ERROR some_pid must be closed in order to backup the configuration" >> some/pa\\ th/test.log',
     'else',
-    f'  tar -cf dir1/arch.tar {SWD}/data/src/dir6 --exclude='+'{*/__.*} && echo "Created tar Archive dir1/arch.tar From '+f'{SWD}/data/src/dir6" >> some/pa\\ th/test.log',
+    f'  tar -cf dir1/arch.tar {SWD}/data/src/dir6 --exclude='+'*/__.* && echo "Created tar Archive dir1/arch.tar From '+f'{SWD}/data/src/dir6" >> some/pa\\ th/test.log',
     'fi',
-    f'rsync -truOvn {SWD}/data/src/g.xml {DDP} $log ',
-    f'rsync -truOvn {SWD}/data/src/' + '{h.go,l.doc} tests/data/tgt/dir1/conf $log ',
+    f'rsync -truOvn {SWD}/data/src/g.xml {DDP} $log',
+    f'rsync -truOvn {SWD}/data/src/' + '{h.go,l.doc} tests/data/tgt/dir1/conf $log',
     '',
     '# Post Commands',
     "echo 'Hello, world'",

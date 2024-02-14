@@ -21,8 +21,8 @@
     }
   ],
   "settings": {
+    "name": "test-name",
     "os": "auto",
-    "tool": "rsync",
     "rmode": "truOvn",
     "rconfmode": "trOn",
     "rlogfilename": "some/pa th/test.log",
