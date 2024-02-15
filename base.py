@@ -1,42 +1,53 @@
 import re
 import os
+from subprocess import run
+from abc import ABC
 
 
+class AgnosticBase(ABC):
 
-class BasicGenerator:
     re_space = re.compile(r'(?<!\\) ')
     SWD = os.path.dirname(os.path.abspath(__file__))
 
-    def get_target_path(self, path:dict) -> str:
-        '''Returns path where the file will be stored on destination'''
-        return os.path.join(path['dst'], path['src'])
-
     def parse_path(self, path:str) -> str:
-        '''Parse single path'''
-        return os.path.normpath(self.re_space.sub('\ ', path))
+        return os.path.normpath(self.re_space.sub(r'\ ', path))
 
     def parse_config(self, config:dict) -> dict:
         self.SWD = self.parse_path(self.SWD)
-        config['rsync']['settings']['rlogfilename'] = self.parse_path(config['rsync']['settings']['rlogfilename'])
-        config['rsync']['settings']['defaultdst'] = self.parse_path(config['rsync']['settings'].get('defaultdst', '.'))
-        for i, v in enumerate(config['rsync']['settings'].setdefault('mkdirs', [])):
-            config['rsync']['settings']['mkdirs'][i] = self.parse_path(v)
-        for i, v in enumerate(config['rsync']['paths']):
-            config['rsync']['paths'][i]['src'] = self.parse_path(v['src'])
+        config['settings']['logfile'] = self.parse_path(config['settings']['logfile'])
+        config['settings']['defaultdst'] = self.parse_path(config['settings'].get('defaultdst', '.'))
+        for i, v in enumerate(config['settings'].setdefault('mkdirs', [])):
+            config['settings']['mkdirs'][i] = self.parse_path(v)
+        batch_id = 0
+        for i, v in enumerate(config['paths']):
+            config['paths'][i]['batch_id'] = batch_id
+            config['paths'][i]['src'] = self.parse_path(v['src'])
             try:
-                config['rsync']['paths'][i]['dst'] = self.parse_path(v['dst'])
+                config['paths'][i]['dst'] = self.parse_path(v['dst'])
             except KeyError:
-                config['rsync']['paths'][i]['dst'] = config['rsync']['settings']['defaultdst']
+                config['paths'][i]['dst'] = config['settings']['defaultdst']
+            batch_id += 1
         return config
 
-    # TODO implement proper parsing
-    def parse_rsync_exclude(self, excl:list) -> re.Pattern:
-        '''Parses the rsync glob patterns to regex'''
-        if not excl: res = r'.^'
-        else:
-            res = '(' + '|'.join(p[1:-1] for p in excl) + ')'
-        return re.compile(res)
 
-    def join_regex(self, regex:list, prepend:str='') -> re.Pattern:
-        '''Creates regex pattern from a list of separate expressions'''
-        return re.compile(f'{prepend}(' + '|'.join(regex) + ')')
+
+class LinuxBase:
+    
+    FN = type('Functions', (object,), {'rm':'rm', 'rmrf':'rm -rf', 'exe':'sh'})()
+
+    @staticmethod
+    def execute(tempfile):
+        '''Runs the backup script'''
+        run(['chmod', '+x', tempfile])
+        run([f'./{tempfile}'], shell=True)
+
+
+
+class PythonBase:
+    
+    FN = type('Functions', (object,), {'exe':'py', 'rm': 'rm'})()
+
+    @staticmethod
+    def execute(tempfile):
+        '''Runs the backup script'''
+        run([f'python3 ./{tempfile}'], shell=True)

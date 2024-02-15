@@ -15,7 +15,7 @@ SCENARIO_SRC = [
         'g.xml',
         'h.go',
         {'dir3':[]},
-        {'dir6': ['z.zip', 'b.bz2', {'dir7': ['t.tar']}]}
+        {'dir6': ['z.zip', 'b.bz2', {'dir7': ['t.tar', '__r.rar']}]}
     ]
 SCENARIO_TGT = [
         {'dir1' : 
@@ -38,18 +38,44 @@ SCENARIO_TGT = [
         'r_g.xml',
         'g.xml'
     ]
-
+EXPECTED_TGT_TREE = {
+    f'{DDP}/adj',
+    f'{DDP}/r_g.xml',
+    f'{DDP}/g.xml',
+    f'{DDP}/r_g.xml',
+    f'{DDP}/dir1',
+    f'{DDP}/dir1/a.txt', 
+    f"{DDP}/dir1/b.txt",
+    f"{DDP}/dir1/arch.tar",
+    f"{DDP}/dir1/__k.pdf",
+    f'{DDP}/dir1/dir2',
+    f'{DDP}/dir1/dir2/d.cpp',
+    f'{DDP}/dir1/dir2/venv',
+    f'{DDP}/dir1/dir2/venv/e.whl',
+    f'{DDP}/dir1/dir2/venv/f.h',
+    f'{DDP}/dir1/dir2/venv/r_n.exe',
+    f'{DDP}/dir1/dir2/c.csv',
+    f'{DDP}/dir1/dir 4',
+    f'{DDP}/dir1/dir 4/h.html',
+    f"{DDP}/dir1/dir 4/i.ini",
+    f'{DDP}/dir1/dir5',
+    f'{DDP}/dir1/conf',
+    f'{DDP}/dir1/conf/r_dig',
+    f'{DDP}/dir1/conf/r_dig/r_z.zip',
+    f'{DDP}/dir1/conf/h.go',
+    f'{DDP}/dir1/conf/r_e.avi', 
+}
 
 EXP_GEN_RSYNC = [
     '# Sync files',
-    f'rsync -truOvn {SWD}/data/src/dir1 {DDP} $log ' + '--exclude={*/venv*,*/__.*}',
+    f'rsync -truOv {SWD}/data/src/dir1 {DDP} $log ' + '--exclude={*/venv*,*/__.*}',
     'if pgrep some_pid; then',
-    '  echo "ERROR some_pid must be closed in order to backup the configuration" >> some/pa\\ th/test.log',
+    '\techo "ERROR some_pid must be closed in order to backup the configuration" >> some/pa\\ th/test.log',
     'else',
-    f'  tar -cf dir1/arch.tar {SWD}/data/src/dir6 | tee -a some/pa\\ th/test.log',
+    f'\ttar --exclude=*/__.* -cvf tests/data/tgt/dir1/arch.tar -C {SWD}/data/src/dir6 . &>> some/pa\\ th/test.log',
     'fi',
-    f'rsync -truOvn {SWD}/data/src/g.xml {DDP} $log ',
-    f'rsync -truOvn {SWD}/data/src/'+'{h.go,l.doc} tests/data/tgt/dir1/conf $log ',
+    f'rsync -truOv {SWD}/data/src/g.xml {DDP} $log',
+    f'rsync -truOv {SWD}/data/src/'+'{h.go,l.doc} tests/data/tgt/dir1/conf $log',
     ''
 ]
 
@@ -75,8 +101,7 @@ EXP_GENERATE_PREPARE_SCRIPT = [
     'mkdir -p tests/data/tgt/adj',
     '',
     '# Pre Commands',
-    "echo 'Goodbye' | tee some/pa\\ th/test.log",
-    'man tee',
+    "echo 'Goodbye' | tee -a some/pa\\ th/test.log",
     '',
     '# Apply changes (renamed/deleted/moved)',
     f'rm -rfv {DDP}/dir1/dir\\ 4/r_i.ini | tee -a some/pa\\ th/test.log',
@@ -84,14 +109,14 @@ EXP_GENERATE_PREPARE_SCRIPT = [
     f'rm -rfv {DDP}/dir1/r_dir5 | tee -a some/pa\\ th/test.log',
     '',
     '# Sync files',
-    f'rsync -truOvn {SWD}/data/src/dir1 {DDP} $log ' + '--exclude={*/venv*,*/__.*}',
+    f'rsync -truOv {SWD}/data/src/dir1 {DDP} $log ' + '--exclude={*/venv*,*/__.*}',
     'if pgrep some_pid; then',
-    '  echo "ERROR some_pid must be closed in order to backup the configuration" >> some/pa\\ th/test.log',
+    '\techo "ERROR some_pid must be closed in order to backup the configuration" >> some/pa\\ th/test.log',
     'else',
-    f'  tar -cf dir1/arch.tar {SWD}/data/src/dir6 | tee -a some/pa\\ th/test.log',
+    f'\ttar --exclude=*/__.* -cvf tests/data/tgt/dir1/arch.tar -C {SWD}/data/src/dir6 . &>> some/pa\\ th/test.log',
     'fi',
-    f'rsync -truOvn {SWD}/data/src/g.xml {DDP} $log ',
-    f'rsync -truOvn {SWD}/data/src/' + '{h.go,l.doc} tests/data/tgt/dir1/conf $log ',
+    f'rsync -truOv {SWD}/data/src/g.xml {DDP} $log',
+    f'rsync -truOv {SWD}/data/src/' + '{h.go,l.doc} tests/data/tgt/dir1/conf $log',
     '',
     '# Post Commands',
     "echo 'Hello, world'",

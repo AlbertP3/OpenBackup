@@ -1,0 +1,39 @@
+{
+  "paths": [
+    {
+      "src": "dir1",
+      "exclude": ["*/venv*", "*/__.*"]
+    },
+    {
+      "src": "dir6",
+      "dst": "tests/data/tgt/dir1/arch.tar",
+      "require_closed": "some_pid",
+      "exclude": ["*/__.*"],
+      "isconf": true,
+      "archive": true
+    },
+    {
+        "src": "g.xml"
+    },
+    {
+        "src": "{h.go,l.doc}",
+        "dst": "dir1/conf"
+    }
+  ],
+  "settings": {
+    "name": "test-name",
+    "os": "auto",
+    "rmode": "truOv",
+    "rconfmode": "trO",
+    "logfile": "some/pa th/test.log",
+    "logfmt": "/%f",
+    "cmd":
+    {
+      "pre": ["echo 'Goodbye' | tee -a ${LOG_PATH}"],
+      "post": ["echo 'Hello, world'"]
+    },
+    "mkdirs": ["./tests/data/tgt/dir1/conf", "tests/data/tgt/adj"],
+    "editor": ["nvim", "+1", "-c set filetype=sh", "${FILE}"],
+    "sync_precision": 0
+  }
+ }

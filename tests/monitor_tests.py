@@ -2,20 +2,23 @@ import pytest
 import re
 import os
 from copy import deepcopy
+import logging
 
 from unittest import TestCase
-from tree_monitor import TreeMonitor
-from base import BasicGenerator
+from monitors import LinuxMonitor, PythonMonitor
+from base import AgnosticBase
 from . import SWD, config, DDP
 
+log = logging.getLogger('monitor_tests')
 
 
-class MonitorTests(TestCase, BasicGenerator):
-    exp_log_path = 'some/pa\ th/test.log'
+
+class LinuxMonitorTests(TestCase, AgnosticBase):
+    exp_log_path = r'some/pa\ th/test.log'
 
     def setUp(self):
         super().setUp()
-        self.monitor = TreeMonitor(self.parse_config(deepcopy(config)))
+        self.monitor = LinuxMonitor(self.parse_config(deepcopy(config)))
 
     def tearDown(self):
         super().tearDown()
@@ -68,7 +71,7 @@ class MonitorTests(TestCase, BasicGenerator):
         '''Verify return value of collect_diff'''
         self.monitor._files_scanned = 0
         self.monitor.out = list()
-        self.monitor.collect_diff()
+        self.monitor.collect_diff(self.monitor.get_expanded_paths(self.monitor.config['paths']))
         self.assertEqual(self.monitor.diff, 
             {f'{DDP}/dir1/r_ b.txt', f'{DDP}/dir1/dir 4/r_i.ini', f'{DDP}/dir1/r_dir5'})
         self.assertEqual(self.monitor._files_scanned, 11)
@@ -77,7 +80,7 @@ class MonitorTests(TestCase, BasicGenerator):
         '''Verify that diff is filtered correctly'''
         self.monitor._files_scanned = 0
         self.monitor.out = list()
-        self.monitor.collect_diff()
+        self.monitor.collect_diff(self.monitor.get_expanded_paths(self.monitor.config['paths']))
         self.assertEqual(self.monitor.diff, 
             {f'{DDP}/dir1/r_ b.txt', f'{DDP}/dir1/dir 4/r_i.ini',
             f'{DDP}/dir1/r_dir5'}
@@ -101,7 +104,7 @@ class MonitorTests(TestCase, BasicGenerator):
     
     def test_expand_paths(self):
         '''Verify that paths are expanded correctly'''
-        paths = {v['src'] for v in self.monitor.get_expanded_paths(self.monitor.config['rsync']['paths'])}
+        paths = {v['src'] for v in self.monitor.get_expanded_paths(self.monitor.config['paths'])}
         self.assertIn(f'{SWD}/data/src/h.go', paths)
         self.assertIn(f'{SWD}/data/src/l.doc', paths)
         self.assertNotIn(f'{SWD}/data/src/'+'{h,go,l.doc}', paths)
@@ -121,7 +124,23 @@ class MonitorTests(TestCase, BasicGenerator):
         '''Verify that main method works correctly'''
         res = self.monitor.generate()
         self.assertEqual(res, [
-            f'rm -rfv {DDP}/dir1/dir\ 4/r_i.ini | tee -a {self.exp_log_path}',
-            f'rm -rfv {DDP}/dir1/r_\ b.txt | tee -a {self.exp_log_path}',
+            rf'rm -rfv {DDP}/dir1/dir\ 4/r_i.ini | tee -a {self.exp_log_path}',
+            rf'rm -rfv {DDP}/dir1/r_\ b.txt | tee -a {self.exp_log_path}',
             f'rm -rfv {DDP}/dir1/r_dir5 | tee -a {self.exp_log_path}',
         ])
+
+
+
+class PythonMonitorTests(TestCase, AgnosticBase):
+
+    def setUp(self):
+        super().setUp()
+        self.monitor = PythonMonitor(self.parse_config(deepcopy(config)))
+
+    def test_generate(self):
+        out = self.monitor.generate()
+        self.assertIn({'src': f'{SWD}/data/src/dir1/a.txt', 'dst': f'{DDP}/dir1/a.txt', 'action': 'update', 'batch_id':0}, out)
+        self.assertIn({'src': f'{SWD}/data/src/dir1/b.txt', 'dst': f'{DDP}/dir1/b.txt', 'action': 'copy', 'batch_id':0}, out)
+        self.assertIn({'src': f'{SWD}/data/src/h.go', 'dst': f'tests/data/tgt/dir1/conf/h.go', 'action': 'update', 'batch_id':3}, out)
+        self.assertIn({'src': None, 'dst': f'{DDP}/dir1/r_ b.txt', 'action': 'remove', 'batch_id':0}, out)
+        
