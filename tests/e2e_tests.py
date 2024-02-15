@@ -18,7 +18,7 @@ log = logging.getLogger('e2e_tests')
 class LinuxE2ETests(TestCase):
     config = deepcopy(config)
     config['settings']['os'] = "linux"
-    config['settings']['rlogfilename'] = 'tests/rsync.log'
+    config['settings']['logfile'] = 'tests/rsync.log'
     config['paths'].append(
         {"src": f"{SWD}/data/tgt/dir1/arch.tar", "dst": f"{SWD}/data/ext", "extract": True}
     )

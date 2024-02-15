@@ -29,7 +29,7 @@ class LinuxScriptGenerator(AgnosticScriptGenerator):
 
     def __init__(self, config):
         self.config = config
-        self.logpath = self.config['settings']['rlogfilename']
+        self.logpath = self.config['settings']['logfile']
         self.compression_options = {'tar': '', 'bz2': 'j', 'gzip': 'z'}
         self.monitor = LinuxMonitor(self.config)
     
@@ -53,7 +53,7 @@ class LinuxScriptGenerator(AgnosticScriptGenerator):
         self.out.append('# Setup logging')
         self.out.extend([
             f'echo -n > {self.logpath}',
-            f'''log="--log-file={self.logpath} --log-file-format={self.config['settings']['rlogfileformat']}"''',
+            f'''log="--log-file={self.logpath} --log-file-format={self.config['settings']['logfmt']}"''',
             ''
         ])
 
@@ -167,11 +167,11 @@ class PythonScriptGenerator(AgnosticScriptGenerator):
             '',
             '# Setup logging', 
             "try:",
-                f"\tos.remove('{self.config['settings']['rlogfilename']}')",
+                f"\tos.remove('{self.config['settings']['logfile']}')",
             "except FileNotFoundError:",
                 "\tpass",
             "logging.basicConfig(",
-                f"\tfilename=os.path.realpath('{self.config['settings']['rlogfilename']}'),",
+                f"\tfilename=os.path.realpath('{self.config['settings']['logfile']}'),",
                 "\tfilemode='a',",
                 "\tformat='%(asctime)s.%(msecs)05d | %(message)s',",
                 "\tdatefmt='%H:%M:%S', ",

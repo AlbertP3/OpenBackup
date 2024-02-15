@@ -1,7 +1,7 @@
 import re
 import os
 from subprocess import run
-from abc import ABC, abstractmethod
+from abc import ABC
 
 
 class AgnosticBase(ABC):
@@ -10,11 +10,11 @@ class AgnosticBase(ABC):
     SWD = os.path.dirname(os.path.abspath(__file__))
 
     def parse_path(self, path:str) -> str:
-        return os.path.normpath(self.re_space.sub('\ ', path))
+        return os.path.normpath(self.re_space.sub(r'\ ', path))
 
     def parse_config(self, config:dict) -> dict:
         self.SWD = self.parse_path(self.SWD)
-        config['settings']['rlogfilename'] = self.parse_path(config['settings']['rlogfilename'])
+        config['settings']['logfile'] = self.parse_path(config['settings']['logfile'])
         config['settings']['defaultdst'] = self.parse_path(config['settings'].get('defaultdst', '.'))
         for i, v in enumerate(config['settings'].setdefault('mkdirs', [])):
             config['settings']['mkdirs'][i] = self.parse_path(v)

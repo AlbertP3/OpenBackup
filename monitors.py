@@ -118,7 +118,7 @@ class LinuxMonitor(AgnosticMonitor):
     
     def gen_actions(self):
         actions = sorted([self.parse_path(p) for p in self.diff])
-        self.out.extend([f"rm -rfv {f} | tee -a {self.config['settings']['rlogfilename']}" for f in actions])
+        self.out.extend([f"rm -rfv {f} | tee -a {self.config['settings']['logfile']}" for f in actions])
 
 
 
@@ -133,7 +133,7 @@ class PythonMonitor(AgnosticMonitor):
         self.results_ready = False
         self.sync_prec = self.config['settings'].get('sync_precision', 1)
 
-    def generate(self, use_cache=False) -> list[dict[str, str, str]]:
+    def generate(self, use_cache=False) -> list[dict[str, str, str, int]]:
         '''Returns list of dicts [{src, dst, action, batch_id}].
            Marks files for: copy, update, delete.
            Does NOT include os-specific instructions'''

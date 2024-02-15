@@ -52,7 +52,7 @@ class OpenBackup(AgnosticBase):
         print(f"Loaded {selected}")
     
     def load_platform_base(self):
-        _os = self.config['settings'].get('os', 'python')
+        _os = self.config['settings'].get('os', 'python').lower()
         if _os == 'auto': 
             _os = system().lower()
             _os = _os if _os in {'linux',} else 'python'
@@ -86,14 +86,13 @@ class OpenBackup(AgnosticBase):
             if os.path.getmtime(self.tempfile) > mtime:
                 self.should_run = True
         else:
-            print(self.instructions)
-            print('\n')
-            self.should_run = input('Confirm execution? [Y/n] ').lower() in {'yes', 'y'}
+            print(f"You can now edit {self.tempfile} in your favourite editor")
+            self.should_run = input('Confirm execution (y/n)? ').lower() in {'yes', 'y'}
     
     def gen_temp_file(self):
         '''Creates an uniquely named file with the backup instructions.
            It is deleted after self.generate() ends'''
-        name = f"{self.config['settings'].get('name', 'job')}-{str(uuid4())[:8]}"
+        name = self.config['settings'].get('name', 'job')
         while f"{name}.{self.FN.exe}" in os.listdir('.'):
             name += f"-{str(uuid4())[:8]}"
         self.tempfile = f"{name}.{self.FN.exe}"

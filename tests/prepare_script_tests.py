@@ -25,7 +25,7 @@ class LinuxPrepareScriptTests(TestCase, AgnosticBase):
 
     def test_parse_paths(self):
         '''Verify that paths are parsed correctly'''
-        self.assertEqual(self.rsync_generator.config['settings']['rlogfilename'], r'some/pa\ th/test.log')
+        self.assertEqual(self.rsync_generator.config['settings']['logfile'], r'some/pa\ th/test.log')
         for i, v in enumerate(self.rsync_generator.config['paths']):
             self.assertEqual(v['src'], self.parse_path(v['src']))
             self.assertEqual(v['dst'], self.parse_path(v['dst']))
