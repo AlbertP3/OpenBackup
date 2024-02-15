@@ -39,11 +39,11 @@ class LinuxPrepareScriptTests(TestCase, AgnosticBase):
         '''Verify that method returns proper value'''
         res = self.rsync_generator.get_archive_cmd({'dst': './dir/folder/arch.tar', 
                                                     'src': '/x/y/file'})
-        self.assertEqual(res, r'''tar -cf ./dir/folder/arch.tar /x/y/file && echo "Created tar Archive ./dir/folder/arch.tar From /x/y/file" >> some/pa\ th/test.log''')
+        self.assertEqual(res[0], r'''tar -cvf ./dir/folder/arch.tar -C /x/y/file . &>> some/pa\ th/test.log''')
         res = self.rsync_generator.get_archive_cmd({'dst': './dir/folder/arch.tar', 
                                                     'src': '/x/y/file',
                                                     'exclude': ["*/__.*"]})
-        self.assertEqual(res, r'''tar -cf ./dir/folder/arch.tar /x/y/file --exclude=*/__.* && echo "Created tar Archive ./dir/folder/arch.tar From /x/y/file" >> some/pa\ th/test.log''')
+        self.assertEqual(res[0], r'''tar --exclude=*/__.* -cvf ./dir/folder/arch.tar -C /x/y/file . &>> some/pa\ th/test.log''')
     
     def test_gen_post_cmds(self):
         '''Verify that method returns proper value'''
@@ -54,8 +54,7 @@ class LinuxPrepareScriptTests(TestCase, AgnosticBase):
         '''Verify that method returns proper value'''
         self.rsync_generator.gen_cmds('pre')
         self.assertEqual(self.rsync_generator.out, [ 
-            '# Pre Commands', "echo 'Goodbye' | tee some/pa\\ th/test.log", 
-            'man tee', ''])
+            '# Pre Commands', "echo 'Goodbye' | tee -a some/pa\\ th/test.log", ''])
 
     def test_gen_monitor_actions(self):
         '''Verify that method returns proper value'''

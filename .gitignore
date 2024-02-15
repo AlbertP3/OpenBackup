@@ -1,7 +1,7 @@
 profiles/*
 !profiles/test.json
 tests/data
-tests/tests.log
+tests/*.log
 perf_tests
 .vscode
 .pytest*

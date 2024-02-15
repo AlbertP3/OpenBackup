@@ -60,21 +60,24 @@ class LinuxScriptGenerator(AgnosticScriptGenerator):
     def gen_tool_actions(self):
         self.out.append("# Sync files")
         for path in self.config['paths']:
-            if not path.get('require_closed'):
-                if path.get('archive'):
-                    self.out.append(self.get_archive_cmd(path))
-                elif path.get('extract'):
-                    self.out.append(self.get_extract_cmd(path))
-            c = self.gen_rsync(path)
+            if path.get('archive'):
+                cmd = self.get_archive_cmd(path)
+            elif path.get('extract'):
+                cmd = self.get_extract_cmd(path)
+            else:
+                cmd = self.gen_rsync(path)
+
             if path.get('require_closed'):
-                self.gen_require_closed(c, path)
-            elif c:
-                self.out.append(c)
+                self.gen_require_closed(cmd, path)
+            else:
+                self.out.extend(cmd)
         self.out.append('')
 
-    def gen_rsync(self, path:dict) -> str:
+    def gen_rsync(self, path:dict) -> list:
         mode = self.config['settings']['rconfmode'] if path.get('isconf') else self.config['settings']['rmode']
-        return f"""rsync -{mode} {path['src']} {path['dst']} $log{self.fmt_excl(path)}"""
+        return [
+            f"rsync -{mode} {path['src']} {path['dst']} $log{self.fmt_excl(path)}"
+        ]
     
     def parse_path(self, path:str) -> str:
         return os.path.normpath(self.re_space.sub(r'\ ', path))
@@ -94,8 +97,8 @@ class LinuxScriptGenerator(AgnosticScriptGenerator):
             cmd = self.get_extract_cmd(path)
         self.out.extend([
             f"if pgrep {path['require_closed']}; then", 
-            f'''  echo "ERROR {path['require_closed']} must be closed in order to backup the configuration" >> {self.logpath}''',
-            'else', f"  {cmd}", 'fi'
+            f'''\techo "ERROR {path['require_closed']} must be closed in order to backup the configuration" >> {self.logpath}''',
+            'else', *[f"\t{c}" for c in cmd], 'fi'
         ])
 
     def gen_mkdirs(self):
@@ -108,15 +111,20 @@ class LinuxScriptGenerator(AgnosticScriptGenerator):
         if res := self.monitor.generate():
             self.out.extend(["# Apply changes (renamed/deleted/moved)", *res, ''])
 
-    def get_archive_cmd(self, path) -> str:
+    def get_archive_cmd(self, path) -> list:
         ext = path['dst'].split('.')[-1]
         comp = self.compression_options.get(ext, '')
-        return f'''tar -c{comp}f {path['dst']} {path['src']}{self.fmt_excl(path)} && echo "Created {ext} Archive {path['dst']} From {path['src']}" >> {self.logpath}'''
+        return [
+            f"tar{self.fmt_excl(path)} -c{comp}vf {path['dst']} -C {path['src']} . &>> {self.logpath}"
+        ]
 
-    def get_extract_cmd(self, path) -> str:
+    def get_extract_cmd(self, path) -> list:
         ext = path['src'].split('.')[-1]
         comp = self.compression_options.get(ext, '')
-        return f'''tar -x{comp}f {path['src']} -C {path['dst']} --strip-components=1 && echo "Extracted {ext} Archive {path['src']} To {path['dst']}" >> {self.logpath}'''
+        return [
+            f"tar -x{comp}vf {path['src']} -C {path['dst']} . &>> {self.logpath}",
+            f"rm -v {os.path.join(path['dst'], os.path.basename(path['src']))} | tee -a {self.logpath}"
+        ]
 
     def fmt_excl(self, path:dict) -> str:
         '''Parse exluded patterns for rsync --exclude'''
@@ -174,16 +182,16 @@ class PythonScriptGenerator(AgnosticScriptGenerator):
             '# Declare functions',
             "def rm(dst):",
                 "\tos.remove(dst)",
-                "\log.info(f'Removed file {dst}')",
+                "\tlog.info(f'Removed file {dst}')",
             "def rmdir(dst):",
                 "\tshutil.rmtree(dst)",
-                "\log.info(f'Removed directory {dst}')",
+                "\tlog.info(f'Removed directory {dst}')",
             "def cp(src, dst):",
                 "\tshutil.copy2(src, dst)",
-                "\log.info(f'Copied file to {dst}')",
+                "\tlog.info(f'Copied file to {dst}')",
             "def cpdir(src, dst, ignore=None):",
                 "\tshutil.copytree(src, dst, ignore=ignore)",
-                "\log.info(f'Copied directory to {dst}')",
+                "\tlog.info(f'Copied directory to {dst}')",
             ''
         ]
 

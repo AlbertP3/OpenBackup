@@ -9,7 +9,7 @@ from monitors import LinuxMonitor, PythonMonitor
 from base import AgnosticBase
 from . import SWD, config, DDP
 
-logger = logging.getLogger('monitor_tests')
+log = logging.getLogger('monitor_tests')
 
 
 

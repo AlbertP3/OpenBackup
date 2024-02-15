@@ -6,7 +6,7 @@
     },
     {
       "src": "dir6",
-      "dst": "dir1/arch.tar",
+      "dst": "tests/data/tgt/dir1/arch.tar",
       "require_closed": "some_pid",
       "exclude": ["*/__.*"],
       "isconf": true,
@@ -23,13 +23,13 @@
   "settings": {
     "name": "test-name",
     "os": "auto",
-    "rmode": "truOvn",
-    "rconfmode": "trOn",
+    "rmode": "truOv",
+    "rconfmode": "trO",
     "rlogfilename": "some/pa th/test.log",
     "rlogfileformat": "/%f",
     "cmd":
     {
-      "pre": ["echo 'Goodbye' | tee ${LOG_PATH}", "man tee"],
+      "pre": ["echo 'Goodbye' | tee -a ${LOG_PATH}"],
       "post": ["echo 'Hello, world'"]
     },
     "mkdirs": ["./tests/data/tgt/dir1/conf", "tests/data/tgt/adj"],
