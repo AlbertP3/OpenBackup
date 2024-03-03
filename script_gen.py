@@ -46,7 +46,7 @@ class LinuxScriptGenerator(AgnosticScriptGenerator):
         return self.out
     
     def gen_header(self):
-        self.out.extend(["#!/usr/bin/env bash", ''])
+        self.out.extend([self.config['settings'].get("shebang", "#!/bin/bash"), ''])
         self.out.extend(['# Enable Pathname Expansion', 'shopt -s extglob', ''])
 
     def gen_logging(self):

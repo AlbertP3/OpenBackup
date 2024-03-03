@@ -88,7 +88,7 @@ f'rm -rfv {DDP}/dir1/r_dir5 | tee -a some/pa\\ th/test.log',
 ]
 
 EXP_GENERATE_PREPARE_SCRIPT = [
-    '#!/usr/bin/env bash',
+    '#!/bin/bash',
     '',
     '# Enable Pathname Expansion',
     'shopt -s extglob',

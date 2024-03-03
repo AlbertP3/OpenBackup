@@ -34,6 +34,7 @@
     },
     "mkdirs": ["./tests/data/tgt/dir1/conf", "tests/data/tgt/adj"],
     "editor": ["nvim", "+1", "-c set filetype=sh", "${FILE}"],
-    "sync_precision": 0
+    "sync_precision": 0,
+    "shebang": "#!/bin/bash"
   }
  }

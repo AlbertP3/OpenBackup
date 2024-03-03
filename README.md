@@ -54,6 +54,7 @@ settings:
         mkdirs                  - list of dirs to create before backup begins. Untracked
         defaultdst              - path to recourse to if 'dst' was not provided. Defaults to '.'
         sync_precision          - tolerance in seconds for mtime differences. Defaults to 1
+        shebang                 - allows to customize the script's shebang
     }
 ```
 
