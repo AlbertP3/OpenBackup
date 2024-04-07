@@ -5,9 +5,8 @@ from tests.scenarios import SCENARIO_SRC, SCENARIO_TGT
 from . import SWD
 
 
-
 def pytest_configure():
-    '''Called before whole test session starts'''
+    """Called before whole test session starts"""
     os.mkdir(f"{SWD}/data")
     create_tree(SCENARIO_TGT, f"{SWD}/data/tgt")
     time.sleep(0)
@@ -15,5 +14,5 @@ def pytest_configure():
 
 
 def pytest_sessionfinish(session, exitstatus):
-    '''Called after whole test run finished'''
+    """Called after whole test run finished"""
     clear_tree()

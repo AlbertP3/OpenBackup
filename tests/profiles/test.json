@@ -2,22 +2,27 @@
   "paths": [
     {
       "src": "dir1",
-      "exclude": ["*/venv*", "*/__.*"]
+      "exclude": [
+        "*/venv*",
+        "*/__.*"
+      ]
     },
     {
       "src": "dir6",
       "dst": "tests/data/tgt/dir1/arch.tar",
       "require_closed": "some_pid",
-      "exclude": ["*/__.*"],
+      "exclude": [
+        "*/__.*"
+      ],
       "isconf": true,
       "archive": true
     },
     {
-        "src": "g.xml"
+      "src": "g.xml"
     },
     {
-        "src": "{h.go,l.doc}",
-        "dst": "dir1/conf"
+      "src": "{h.go,l.doc}",
+      "dst": "dir1/conf"
     }
   ],
   "settings": {
@@ -26,15 +31,26 @@
     "rmode": "truOv",
     "rconfmode": "trO",
     "logfile": "some/pa th/test.log",
-    "logfmt": "/%f",
-    "cmd":
-    {
-      "pre": ["echo 'Goodbye' | tee -a ${LOG_PATH}"],
-      "post": ["echo 'Hello, world'"]
+    "logfmt": "%f -> %n",
+    "cmd": {
+      "pre": [
+        "echo 'Goodbye' | tee -a ${LOG_PATH}"
+      ],
+      "post": [
+        "sed -i '/ building\\| sent\\|total size/d' ${LOG_PATH}"
+      ]
     },
-    "mkdirs": ["./tests/data/tgt/dir1/conf", "tests/data/tgt/adj"],
-    "editor": ["nvim", "+1", "-c set filetype=sh", "${FILE}"],
+    "mkdirs": [
+      "./tests/data/tgt/dir1/conf",
+      "tests/data/tgt/adj"
+    ],
+    "editor": [
+      "nvim",
+      "+1",
+      "-c set filetype=sh",
+      "${FILE}"
+    ],
     "sync_precision": 0,
     "shebang": "#!/bin/bash"
   }
- }
+}
