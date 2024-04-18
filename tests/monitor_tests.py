@@ -68,7 +68,7 @@ class LinuxMonitorTests(TestCase, AgnosticBase):
             os.path.join(SWD, "data/tgt/dir1/dir2"), re.compile(r".^")
         )
         files = {os.path.basename(f) for f in res}
-        self.assertEqual(files, {"e.whl", "f.h", "r_n.exe", "venv", "c.csv", "d.cpp"})
+        self.assertEqual(files, {"f.h", "r_n.exe", "venv", "c.csv", "d.cpp"})
 
     def test_collect_diff(self):
         """Verify return value of collect_diff"""
@@ -121,8 +121,8 @@ class LinuxMonitorTests(TestCase, AgnosticBase):
             for v in self.monitor.get_expanded_paths(self.monitor.config["paths"])
         }
         self.assertIn(f"{SWD}/data/src/h.go", paths)
-        self.assertIn(f"{SWD}/data/src/l.doc", paths)
-        self.assertNotIn(f"{SWD}/data/src/" + "{h,go,l.doc}", paths)
+        self.assertIn(f"{SWD}/data/src/l s.doc", paths)
+        self.assertNotIn(f"{SWD}/data/src/" + "{h,go,l s.doc}", paths)
         self.assertEqual(len(paths), 5)
 
     def test_expand_paths_2(self):

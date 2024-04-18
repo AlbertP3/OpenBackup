@@ -1,16 +1,18 @@
 import os
+import re
 from abc import ABC, abstractmethod
 
 from monitors import LinuxMonitor, PythonMonitor
 
 
-def sq(s: str):
+def sq(text: str):
     """Surround with single quotes"""
-    return f"'{s}'"
+    return f"'{text}'"
 
 
 class AgnosticScriptGenerator(ABC):
-    newline = "\n"
+    re_path = re.compile(r"(?<!\\) ")
+    newline = "\n"  # TODO remove in Python3.12
 
     @abstractmethod
     def generate(self) -> list:
@@ -21,6 +23,9 @@ class AgnosticScriptGenerator(ABC):
         """Replace special tags with corresponding variables"""
         cmd = cmd.replace(r"${LOG_PATH}", sq(self.logpath))
         return cmd
+
+    def parse_path(self, path: str) -> str:
+        return self.re_path.sub(r"\ ", path)
 
 
 class LinuxScriptGenerator(AgnosticScriptGenerator):
@@ -84,7 +89,7 @@ class LinuxScriptGenerator(AgnosticScriptGenerator):
             else self.config["settings"]["rmode"]
         )
         return [
-            f"rsync -{mode} {sq(path['src'])} {sq(path['dst'])} {self.log_ref}{self.fmt_excl(path)}"
+            f"rsync -{mode} {self.parse_path(path['src'])} {self.parse_path(path['dst'])} {self.log_ref}{self.fmt_excl(path)}"
         ]
 
     def gen_cmds(self, which: str):
@@ -118,7 +123,11 @@ class LinuxScriptGenerator(AgnosticScriptGenerator):
         ]
         if make_nodes:
             self.out.extend(
-                ["# Create directories", *[f"mkdir -p {sq(f)}" for f in make_nodes], ""]
+                [
+                    "# Create directories",
+                    *[f"mkdir -p {self.parse_path(f)}" for f in make_nodes],
+                    "",
+                ]
             )
 
     def gen_monitor_actions(self):
@@ -129,25 +138,28 @@ class LinuxScriptGenerator(AgnosticScriptGenerator):
         ext = path["dst"].split(".")[-1]
         comp = self.compression_options.get(ext, "")
         return [
-            f"tar{self.fmt_excl(path)} -c{comp}vf {sq(path['dst'])} -C {sq(path['src'])} . &>> {sq(self.logpath)}"
+            f"tar{self.fmt_excl(path)} -c{comp}vf {self.parse_path(path['dst'])} -C {self.parse_path(path['src'])} . &>> {sq(self.logpath)}"
         ]
 
     def get_extract_cmd(self, path) -> list:
         ext = path["src"].split(".")[-1]
         comp = self.compression_options.get(ext, "")
+        arch_path = os.path.join(path["dst"], os.path.basename(path["src"]))
         return [
-            f'''tar -x{comp}vf "{path['src']}" -C "{path['dst']}" . &>> "{self.logpath}"''',
-            f"rm -v {sq(os.path.join(path['dst'], os.path.basename(path['src'])))} | tee -a {sq(self.logpath)}",
+            f'''tar -x{comp}vf {self.parse_path(path['src'])} -C {self.parse_path(path['dst'])} . &>> "{self.logpath}"''',
+            f"rm -v {self.parse_path(arch_path)} | tee -a {sq(self.logpath)}",
         ]
 
     def fmt_excl(self, path: dict) -> str:
         """Parse exluded patterns for rsync --exclude"""
         try:
-            prefix = " --exclude='"
+            prefix = " --exclude="
             if len(path["exclude"]) == 1:
-                return prefix + path["exclude"][0] + "'"
+                return prefix + self.parse_path(path["exclude"][0])
             else:
-                return prefix + "{" + ",".join(path["exclude"]) + "}'"
+                return (
+                    prefix + "{" + ",".join(self.parse_path(f) for f in path["exclude"]) + "}"
+                )
         except KeyError:
             return ""
 

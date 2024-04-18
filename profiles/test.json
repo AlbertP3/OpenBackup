@@ -4,7 +4,8 @@
       "src": "dir1",
       "exclude": [
         "*/venv*",
-        "*/__.*"
+        "*/__.*",
+        "'lit eral'"
       ]
     },
     {
@@ -21,7 +22,7 @@
       "src": "g.xml"
     },
     {
-      "src": "{h.go,l.doc}",
+      "src": "{h.go,l s.doc}",
       "dst": "dir1/conf"
     }
   ],
