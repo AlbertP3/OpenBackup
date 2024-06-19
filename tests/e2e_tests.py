@@ -38,7 +38,7 @@ class LinuxE2ETests(TestCase):
 
     def tearDown(self) -> None:
         self.reset_tree()
-        run([self.ob.FN.rm, self.ob.tempfile])
+        self.ob.os_int.remove(self.ob.tempfile)
 
     def get_file_tree(self, root_: str) -> set:
         actual = set()

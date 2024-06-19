@@ -2,6 +2,7 @@ import os
 import re
 from time import perf_counter
 from abc import ABC, abstractmethod
+from utils import esc_sq
 
 
 class AgnosticMonitor(ABC):
@@ -120,7 +121,7 @@ class LinuxMonitor(AgnosticMonitor):
         actions = sorted([os.path.normpath(p) for p in self.diff])
         self.out.extend(
             [
-                f"rm -rfv '{f}' | tee -a '{self.config['settings']['logfile']}'"
+                f"rm -rfv '{esc_sq(f)}' | tee -a '{esc_sq(self.config['settings']['logfile'])}'"
                 for f in actions
             ]
         )

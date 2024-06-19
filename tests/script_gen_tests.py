@@ -4,7 +4,7 @@ import logging
 
 from . import SWD, config
 from script_gen import LinuxScriptGenerator, PythonScriptGenerator
-from base import AgnosticBase
+from make_backup import OpenBackup
 from tests.scenarios import (
     EXP_GEN_RSYNC,
     EXP_PREPARE_SCRIPT_ACTIONS,
@@ -14,7 +14,7 @@ from tests.scenarios import (
 log = logging.getLogger("script_gen_test")
 
 
-class LinuxPrepareScriptTests(TestCase, AgnosticBase):
+class LinuxPrepareScriptTests(TestCase, OpenBackup):
     config = deepcopy(config)
     maxDiff = None
 
@@ -87,7 +87,7 @@ class LinuxPrepareScriptTests(TestCase, AgnosticBase):
         self.assertEqual(res, EXP_GENERATE_PREPARE_SCRIPT)
 
 
-class PythonPrepareScriptTests(TestCase, AgnosticBase):
+class PythonPrepareScriptTests(TestCase, OpenBackup):
 
     config = deepcopy(config)
     config["settings"]["os"] = "python"
@@ -103,36 +103,3 @@ class PythonPrepareScriptTests(TestCase, AgnosticBase):
     def test_generate(self):
         res = "\n".join(self.python_generator.generate())
         log.debug(res)
-
-    def _test_gen_rms(self):
-        """Check if correct objects are marked for removal"""
-        self.assertListEqual(
-            self.python_generator.gen_rms(),
-            [
-                "# Apply changes (renamed/deleted/moved)",
-                f"rm('{SWD}/data/tgt/dir1/dir 4/r_i.ini')",
-                f"rm('{SWD}/data/tgt/dir1/r_ b.txt'     )",
-                f"rmdir('{SWD}/data/tgt/dir1/r_dir5'    )",
-                "",
-            ],
-        )
-
-    def _test_gen_cps(self):
-        """Check if correct objects are marked for copy"""
-        n = "\n"
-        self.assertListEqual(
-            self.python_generator.gen_cps(),
-            [
-                "# Sync files",
-                f"cp({n}\t'{SWD}/data/src/dir1/a.txt',{n}\t'{SWD}/data/tgt/dir1/a.txt'{n})",
-                f"cp({n}\t'{SWD}/data/src/dir1/b.txt',{n}\t'{SWD}/data/tgt/dir1/b.txt'{n})",
-                f"cp({n}\t'{SWD}/data/src/dir1/dir 4/h.html',{n}\t'{SWD}/data/tgt/dir1/dir 4/h.html'{n})",
-                f"cp({n}\t'{SWD}/data/src/dir1/dir 4/i.ini',{n}\t'{SWD}/data/tgt/dir1/dir 4/i.ini'{n})",
-                f"cp({n}\t'{SWD}/data/src/dir1/dir2/c.csv',{n}\t'{SWD}/data/tgt/dir1/dir2/c.csv'{n})",
-                f"cp({n}\t'{SWD}/data/src/dir1/dir2/d.cpp',{n}\t'{SWD}/data/tgt/dir1/dir2/d.cpp'{n})",
-                f"cp({n}\t'{SWD}/data/src/g.xml',{n}\t'{SWD}/data/tgt/g.xml'{n})",
-                f"cp({n}\t'{SWD}/data/src/h.go',{n}\t'tests/data/tgt/dir1/conf/h.go'{n})",
-                f"cpdir({n}\t'{SWD}/data/src/dir1/dir5',{n}\t'{SWD}/data/tgt/dir1/dir5',{n}\tignore=shutil.ignore_patterns('*/venv*', '*/__.*','lit eral',){n})",
-                "",
-            ],
-        )

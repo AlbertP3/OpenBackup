@@ -1,13 +1,8 @@
 import os
 import re
 from abc import ABC, abstractmethod
-
+from utils import parse_path, sq
 from monitors import LinuxMonitor, PythonMonitor
-
-
-def sq(text: str):
-    """Surround with single quotes"""
-    return f"'{text}'"
 
 
 class AgnosticScriptGenerator(ABC):
@@ -23,9 +18,6 @@ class AgnosticScriptGenerator(ABC):
         """Replace special tags with corresponding variables"""
         cmd = cmd.replace(r"${LOG_PATH}", sq(self.logpath))
         return cmd
-
-    def parse_path(self, path: str) -> str:
-        return self.re_path.sub(r"\ ", path)
 
 
 class LinuxScriptGenerator(AgnosticScriptGenerator):
@@ -89,7 +81,7 @@ class LinuxScriptGenerator(AgnosticScriptGenerator):
             else self.config["settings"]["rmode"]
         )
         return [
-            f"rsync -{mode} {self.parse_path(path['src'])} {self.parse_path(path['dst'])} {self.log_ref}{self.fmt_excl(path)}"
+            f"rsync -{mode} {parse_path(path['src'])} {parse_path(path['dst'])} {self.log_ref}{self.fmt_excl(path)}"
         ]
 
     def gen_cmds(self, which: str):
@@ -125,7 +117,7 @@ class LinuxScriptGenerator(AgnosticScriptGenerator):
             self.out.extend(
                 [
                     "# Create directories",
-                    *[f"mkdir -p {self.parse_path(f)}" for f in make_nodes],
+                    *[f"mkdir -p {parse_path(f)}" for f in make_nodes],
                     "",
                 ]
             )
@@ -138,7 +130,7 @@ class LinuxScriptGenerator(AgnosticScriptGenerator):
         ext = path["dst"].split(".")[-1]
         comp = self.compression_options.get(ext, "")
         return [
-            f"tar{self.fmt_excl(path)} -c{comp}vf {self.parse_path(path['dst'])} -C {self.parse_path(path['src'])} . &>> {sq(self.logpath)}"
+            f"tar{self.fmt_excl(path)} -c{comp}vf {parse_path(path['dst'])} -C {parse_path(path['src'])} . &>> {sq(self.logpath)}"
         ]
 
     def get_extract_cmd(self, path) -> list:
@@ -146,8 +138,8 @@ class LinuxScriptGenerator(AgnosticScriptGenerator):
         comp = self.compression_options.get(ext, "")
         arch_path = os.path.join(path["dst"], os.path.basename(path["src"]))
         return [
-            f'''tar -x{comp}vf {self.parse_path(path['src'])} -C {self.parse_path(path['dst'])} . &>> "{self.logpath}"''',
-            f"rm -v {self.parse_path(arch_path)} | tee -a {sq(self.logpath)}",
+            f'''tar -x{comp}vf {parse_path(path['src'])} -C {parse_path(path['dst'])} . &>> "{self.logpath}"''',
+            f"rm -v {parse_path(arch_path)} | tee -a {sq(self.logpath)}",
         ]
 
     def fmt_excl(self, path: dict) -> str:
@@ -155,11 +147,9 @@ class LinuxScriptGenerator(AgnosticScriptGenerator):
         try:
             prefix = " --exclude="
             if len(path["exclude"]) == 1:
-                return prefix + self.parse_path(path["exclude"][0])
+                return prefix + parse_path(path["exclude"][0])
             else:
-                return (
-                    prefix + "{" + ",".join(self.parse_path(f) for f in path["exclude"]) + "}"
-                )
+                return prefix + "{" + ",".join(parse_path(f) for f in path["exclude"]) + "}"
         except KeyError:
             return ""
 
