@@ -15,7 +15,7 @@ class OpenBackup:
     SWD = os.path.dirname(os.path.abspath(__file__))
 
     def __init__(self):
-        self.tempfile = ""
+        self.tmpfile = ""
         self.should_run = False
 
     def make(self):
@@ -26,12 +26,23 @@ class OpenBackup:
             return
         self.prepare_script()
         self.show_output()
+        if self.config["settings"]["validate"]:
+            self.validate_script()
         if self.should_run:
             self.execute()
         else:
             print("Operation has been cancelled")
-        if self.tempfile:
-            self.os_int.remove(self.tempfile)
+        if self.tmpfile:
+            self.os_int.remove(self.tmpfile)
+
+    def validate_script(self):
+        valid, err = self.os_int.validate(self.tmpfile)
+        if valid:
+            print(f"Script validation successful")
+        else:
+            print("Script validation failed")
+            print(err)
+            self.should_run = False
 
     def load_config(self):
         """Sources config file(s) from the 'profiles' directory.
@@ -56,6 +67,7 @@ class OpenBackup:
 
     def parse_config(self, config: dict) -> dict:
         self.SWD = os.path.normpath(self.SWD)
+        config["settings"].setdefault("validate", True)
         config["settings"]["logfile"] = os.path.normpath(config["settings"]["logfile"])
         config["settings"]["defaultdst"] = os.path.normpath(
             config["settings"].get("defaultdst", ".")
@@ -101,19 +113,19 @@ class OpenBackup:
     def show_output(self):
         """
         Present generated script for confirmation.
-        If 'editor' is specified then tempfile will be opened with that command.
+        If 'editor' is specified then tmpfile will be opened with that command.
         In this case, the script will be executed only if it was saved/modified.
         Without editor, Y/n prompt is displayed and file can be edited independently
         """
         self.gen_temp_file()
         print("Displaying output...")
         if self.editor:
-            mtime = os.path.getmtime(self.tempfile)
+            mtime = os.path.getmtime(self.tmpfile)
             run(self.parse_editor_command(self.editor.copy()))
-            if os.path.getmtime(self.tempfile) > mtime:
+            if os.path.getmtime(self.tmpfile) > mtime:
                 self.should_run = True
         else:
-            print(f"You can now edit {self.tempfile} in your favourite editor")
+            print(f"You can now edit {self.tmpfile} in your favourite editor")
             self.should_run = input("Confirm execution (y/n)? ").lower() in {"yes", "y"}
 
     def gen_temp_file(self):
@@ -124,20 +136,20 @@ class OpenBackup:
         name = self.config["settings"].get("name", "job")
         while f"{name}.{self.os_int.ext}" in os.listdir("."):
             name += f"-{str(uuid4())[:8]}"
-        self.tempfile = f"{name}.{self.os_int.ext}"
-        open(self.tempfile, "w").write(self.instructions)
+        self.tmpfile = f"{name}.{self.os_int.ext}"
+        open(self.tmpfile, "w").write(self.instructions)
 
     def parse_editor_command(self, cmd: list) -> list:
         """Replace special tags with corresponding values"""
         for i, v in enumerate(cmd):
-            cmd[i] = v.replace(r"${FILE}", self.tempfile)
+            cmd[i] = v.replace(r"${FILE}", self.tmpfile)
         return cmd
 
     def execute(self):
         """Wrapper around the script executor"""
         print(f"Running script...")
         t0 = perf_counter()
-        self.os_int.execute(self.tempfile)
+        self.os_int.execute(self.tmpfile)
         print(f"Executed in {perf_counter()-t0:.2f} seconds")
 
 

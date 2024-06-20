@@ -41,3 +41,5 @@ class UtilsTests(TestCase):
         self.assertEqual(esc_dq("/some/path.abc.txt"), "/some/path.abc.txt")
         self.assertEqual(esc_dq('/some/pat"h.abc.txt'), r"/some/pat\"h.abc.txt")
         self.assertEqual(esc_dq('/some/pat\\"h.abc.txt'), r"/some/pat\"h.abc.txt")
+        self.assertEqual(esc_dq('/some/`pa`th.ab$c.txt\\.'), r"/some/\`pa\`th.ab\$c.txt\\.")
+        self.assertEqual(esc_dq('/some/pa\\`th.abc.txt'), r"/some/pa\`th.abc.txt")

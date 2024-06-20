@@ -18,7 +18,7 @@ log = logging.getLogger("e2e_tests")
 class LinuxE2ETests(TestCase):
     config = deepcopy(config)
     config["settings"]["os"] = "linux"
-    config["settings"]["logfile"] = "tests/rsync.log"
+    config["settings"]["logfile"] = "tests/tests.log"
     config["paths"].append(
         {
             "src": f"{SWD}/data/tgt/dir1/arch.tar",
@@ -38,7 +38,7 @@ class LinuxE2ETests(TestCase):
 
     def tearDown(self) -> None:
         self.reset_tree()
-        self.ob.os_int.remove(self.ob.tempfile)
+        self.ob.os_int.remove(self.ob.tmpfile)
 
     def get_file_tree(self, root_: str) -> set:
         actual = set()

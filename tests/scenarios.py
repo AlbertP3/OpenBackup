@@ -67,7 +67,7 @@ _log_ref = r'"${log[@]}"'
 EXP_GEN_RSYNC = [
     "# Sync files",
     f"rsync -truOv {SWD}/data/src/dir1 {DDP} {_log_ref}"
-    + r" --exclude={*/venv*,*/__.*,'lit\ eral'}",
+    + r" --exclude={*/venv*,*/__.*,lit\ eral}",
     "if pgrep 'some_pid'; then",
     "\techo 'ERROR some_pid must be closed in order to backup the configuration' >> 'some/pa th/test.log'",
     "else",
@@ -111,7 +111,7 @@ EXP_GENERATE_PREPARE_SCRIPT = [
     "",
     "# Sync files",
     f"rsync -truOv {SWD}/data/src/dir1 {DDP} {_log_ref}"
-    + r" --exclude={*/venv*,*/__.*,'lit\ eral'}",
+    + r" --exclude={*/venv*,*/__.*,lit\ eral}",
     "if pgrep 'some_pid'; then",
     "\techo 'ERROR some_pid must be closed in order to backup the configuration' >> 'some/pa th/test.log'",
     "else",

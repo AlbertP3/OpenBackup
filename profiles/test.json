@@ -5,7 +5,7 @@
       "exclude": [
         "*/venv*",
         "*/__.*",
-        "'lit eral'"
+        "lit eral"
       ]
     },
     {

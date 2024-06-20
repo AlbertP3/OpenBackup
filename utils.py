@@ -3,12 +3,14 @@ from collections import deque
 from os import PathLike
 
 __bm_deque = deque()
-spec_chrs = " ()&|;<>$`?~#[]=%:@!"
+spec_chrs_rp = " ()&|;<>$`?~#[]=%:@!"
+spec_chrs_dq = '"`$'
 esc = "\\"
-re_path = re.compile(r"(?<!\\)([" + re.escape(spec_chrs) + r"])")
-re_path_backslash = re.compile(r"\\(?![" + re.escape(spec_chrs + "{}\\") + r"])")
+re_path = re.compile(r"(?<!\\)([" + re.escape(spec_chrs_rp) + r"])")
+re_path_bs = re.compile(r"\\(?![" + re.escape(spec_chrs_rp + "{}\\") + r"])")
 re_esc_sq = re.compile(r"'")
-re_esc_dq = re.compile(r'(?<!\\)"')
+re_esc_dq = re.compile(r'(?<!\\)([' + re.escape(spec_chrs_dq) + '])')
+re_esc_dq_bs = re.compile(r"\\(?![" + re.escape(spec_chrs_dq + "\\") + r"])")
 
 
 def braces_match(s: str, braces: str = r"{}") -> bool:
@@ -35,7 +37,7 @@ def parse_path(path: str) -> PathLike:
         path = path.replace("{", re.escape("{"))
         path = path.replace("}", re.escape("}"))
     path = re_path.sub(r"\\\1", path)
-    path = re_path_backslash.sub(r"\\\\", path)
+    path = re_path_bs.sub(r"\\\\", path)
     return path
 
 
@@ -44,7 +46,9 @@ def esc_sq(path: PathLike) -> PathLike:
 
 
 def esc_dq(path: PathLike) -> PathLike:
-    return re_esc_dq.sub(r"\"", path)
+    path = re_esc_dq.sub(r"\\\1", path)
+    path = re_esc_dq_bs.sub(r"\\\\", path)
+    return path
 
 
 def sq(text: str):
