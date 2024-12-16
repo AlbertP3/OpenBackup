@@ -34,11 +34,11 @@ class LinuxE2ETests(TestCase):
         self.ob.load_platform_base()
         self.ob.editor = []
         self.ob.prepare_script()
-        self.ob.gen_temp_file()
+        self.ob.gen_tmpfile()
 
     def tearDown(self) -> None:
         self.reset_tree()
-        run([self.ob.FN.rm, self.ob.tempfile])
+        run([self.ob.FN.rm, self.ob.tmpfile])
 
     def get_file_tree(self, root_: str) -> set:
         actual = set()

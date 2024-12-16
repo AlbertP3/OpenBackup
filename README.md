@@ -11,7 +11,7 @@ Main purpose of this application is to make incremental backups. In order to ach
 3. Second, a script will begin to generate. This can take some time, based on the amount of files to be scanned
 4. Then a temporary file with generated instructions is created and presented to the user in a way specified by the 'editor' setting. It can be reviewed and edited at will
    1. If 'editor' is specified then it's command is used to present the generated script. If it's saved then the script will be executed (mtime > ctime)
-   2. Else a prompt is displayed and the tempfile can still be modified in an external editor before accepting
+   2. Else a prompt is displayed and the tmpfile can still be modified in an external editor before accepting
 5. Note that no operations took place until this point (i.e delete/copy/...)
 6. Finally, user can accept or decline execution of the generated script
 
@@ -24,7 +24,7 @@ Main purpose of this application is to make incremental backups. In order to ach
 | Darwin  | -       | -      | N/A    |
 
 ## Configuration
-Configuration is done via json files in the profiles directory. Example profile is included in the repository (test.json). Required parameters are marked with a star
+Configuration is done via json files in the profiles directory. Example profile is included in the repository (example.json). Required parameters are marked with a star
 ```
 paths:
     [

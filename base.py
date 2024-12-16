@@ -32,10 +32,10 @@ class LinuxBase:
     FN = type("Functions", (object,), {"rm": "rm", "rmrf": "rm -rf", "exe": "sh"})()
 
     @staticmethod
-    def execute(tempfile):
+    def execute(tmpfile):
         """Runs the backup script"""
-        run(["chmod", "+x", tempfile])
-        run([f"./{tempfile}"], shell=True)
+        run(["chmod", "+x", tmpfile])
+        run([f"./{tmpfile}"], shell=True)
 
 
 class PythonBase:
@@ -43,6 +43,6 @@ class PythonBase:
     FN = type("Functions", (object,), {"exe": "py", "rm": "rm"})()
 
     @staticmethod
-    def execute(tempfile):
+    def execute(tmpfile):
         """Runs the backup script"""
-        run([f"python3 ./{tempfile}"], shell=True)
+        run([f"python3 ./{tmpfile}"], shell=True)

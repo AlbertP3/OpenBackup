@@ -13,7 +13,7 @@ class OpenBackup(AgnosticBase):
     """Interactively handles the backup process"""
 
     def __init__(self):
-        self.tempfile = ""
+        self.tmpfile = ""
         self.should_run = False
 
     def make(self):
@@ -27,14 +27,20 @@ class OpenBackup(AgnosticBase):
         if self.should_run:
             self.execute()
         else:
-            print("Operation has been cancelled")
-        if self.tempfile:
-            run([self.FN.rm, self.tempfile])
+            print("Cancelled")
+        if self.tmpfile:
+            run([self.FN.rm, self.tmpfile])
+            print(f"Removed temporary file: {self.tmpfile}")
 
     def load_config(self):
         """Sources config file(s) from the 'profiles' directory.
         Includes automation: default.json, single file or platform name"""
         profiles = sorted(os.listdir(f"{self.SWD}/profiles"))
+        try:
+            # ignore example profile
+            profiles.remove("example.json")
+        except ValueError:
+            pass
         if "default.json" in profiles:
             selected = "default.json"
         elif len(profiles) == 1:
@@ -81,42 +87,43 @@ class OpenBackup(AgnosticBase):
         self.instructions = "\n".join(self.ScriptGenerator.generate())
 
     def show_output(self):
-        """Present generated script for confirmation.
-        If 'editor' is specified then tempfile will be opened with that command.
+        """
+        Present generated script for confirmation.
+        If 'editor' is specified then tmpfile will be opened with that command.
         In this case, the script will be executed only if it was saved/modified.
-        Without an editor, instructions are printed to stdout and a manual confirmation is required.
-        The tempfile can be edited by hand if neccessary"""
-        self.gen_temp_file()
+        Without an editor, instructions are written to a tmpfile and a manual confirmation is required.
+        """
+        self.gen_tmpfile()
         print("Displaying output...")
         if self.editor:
-            mtime = os.path.getmtime(self.tempfile)
+            mtime = os.path.getmtime(self.tmpfile)
             run(self.parse_editor_command(self.editor.copy()))
-            if os.path.getmtime(self.tempfile) > mtime:
+            if os.path.getmtime(self.tmpfile) > mtime:
                 self.should_run = True
         else:
-            print(f"You can now edit {self.tempfile} in your favourite editor")
+            print(f"You can now edit {self.tmpfile} in your favourite editor")
             self.should_run = input("Confirm execution (y/n)? ").lower() in {"yes", "y"}
 
-    def gen_temp_file(self):
+    def gen_tmpfile(self):
         """Creates an uniquely named file with the backup instructions.
         It is deleted after self.generate() ends"""
         name = self.config["settings"].get("name", "job")
         while f"{name}.{self.FN.exe}" in os.listdir("."):
             name += f"-{str(uuid4())[:8]}"
-        self.tempfile = f"{name}.{self.FN.exe}"
-        open(self.tempfile, "w").write(self.instructions)
+        self.tmpfile = f"{name}.{self.FN.exe}"
+        open(self.tmpfile, "w").write(self.instructions)
 
     def parse_editor_command(self, cmd: list) -> list:
         """Replace special tags with corresponding values"""
         for i, v in enumerate(cmd):
-            cmd[i] = v.replace(r"${FILE}", self.tempfile)
+            cmd[i] = v.replace(r"${FILE}", self.tmpfile)
         return cmd
 
     def execute(self):
         """Wrapper around the script executor"""
         print(f"Running script...")
         t0 = perf_counter()
-        self.script_executor(self.tempfile)
+        self.script_executor(self.tmpfile)
         print(f"Executed in {perf_counter()-t0:.2f} seconds")
 
 
@@ -124,7 +131,6 @@ if __name__ == "__main__":
     try:
         ob = OpenBackup()
         ob.make()
+        print("Done")
     except KeyboardInterrupt:
-        pass
-    finally:
-        print("Exitting...")
+        print("Cancelled")

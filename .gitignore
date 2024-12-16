@@ -1,5 +1,5 @@
 profiles/*
-!profiles/test.json
+!profiles/example.json
 tests/data
 tests/*.log
 perf_tests
